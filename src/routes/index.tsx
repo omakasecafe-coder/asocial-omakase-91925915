@@ -10,10 +10,10 @@ export const Route = createFileRoute("/")({
         content:
           "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada.",
       },
-      { property: "og:title", content: "asocial · café omakase" },
+      { property: "og:title", content: "asocial · café omakase — Reserva tu sesión" },
       {
         property: "og:description",
-        content: "Sesiones íntimas de café guiado. Elige fecha, hora y reserva en un minuto.",
+        content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada.",
       },
     ],
   }),

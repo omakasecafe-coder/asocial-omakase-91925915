@@ -79,14 +79,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "asocial · café omakase" },
+      { title: "asocial · café omakase — Reserva tu sesión" },
       {
         name: "description",
-        content: "Una experiencia de café donde el silencio también forma parte del ritual.",
+        content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada.",
       },
       { name: "author", content: "asocial" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "asocial · café omakase — Reserva tu sesión" },
+      { name: "twitter:title", content: "asocial · café omakase — Reserva tu sesión" },
+      { property: "og:description", content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada." },
+      { name: "twitter:description", content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dcfa5108-2d71-4843-aa2d-f60de8c6c66d/id-preview-e53901fd--e5b826e2-4803-480a-87db-479bb8a3566f.lovable.app-1785710640676.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/dcfa5108-2d71-4843-aa2d-f60de8c6c66d/id-preview-e53901fd--e5b826e2-4803-480a-87db-479bb8a3566f.lovable.app-1785710640676.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
