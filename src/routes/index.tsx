@@ -1,24 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { BookingExperience } from "@/components/asocial/BookingExperience";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "asocial · café omakase — Reserva tu sesión" },
+      {
+        name: "description",
+        content:
+          "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada.",
+      },
+      { property: "og:title", content: "asocial · café omakase" },
+      {
+        property: "og:description",
+        content: "Sesiones íntimas de café guiado. Elige fecha, hora y reserva en un minuto.",
+      },
+    ],
+  }),
+  component: BookingExperience,
 });
-
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
-  return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
-  );
-}

@@ -10,33 +10,170 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ReservarRouteImport } from './routes/reservar'
+import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedPagosRouteImport } from './routes/_authenticated/pagos'
+import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
+import { Route as AuthenticatedClientesIdRouteImport } from './routes/_authenticated/clientes.$id'
+import { Route as AuthenticatedReservasIndexRouteImport } from './routes/_authenticated/reservas.index'
+import { Route as AuthenticatedSesionesIndexRouteImport } from './routes/_authenticated/sesiones.index'
+import { Route as AuthenticatedSesionesIdRouteImport } from './routes/_authenticated/sesiones.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReservarRoute = ReservarRouteImport.update({
+  id: '/reservar',
+  path: '/reservar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
+  id: '/calendario',
+  path: '/calendario',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPagosRoute = AuthenticatedPagosRouteImport.update({
+  id: '/pagos',
+  path: '/pagos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedClientesIndexRoute =
+  AuthenticatedClientesIndexRouteImport.update({
+    id: '/clientes/',
+    path: '/clientes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedClientesIdRoute = AuthenticatedClientesIdRouteImport.update({
+  id: '/clientes/$id',
+  path: '/clientes/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReservasIndexRoute =
+  AuthenticatedReservasIndexRouteImport.update({
+    id: '/reservas/',
+    path: '/reservas/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSesionesIndexRoute =
+  AuthenticatedSesionesIndexRouteImport.update({
+    id: '/sesiones/',
+    path: '/sesiones/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSesionesIdRoute = AuthenticatedSesionesIdRouteImport.update({
+  id: '/sesiones/$id',
+  path: '/sesiones/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/reservar': typeof ReservarRoute
+  '/calendario': typeof AuthenticatedCalendarioRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/pagos': typeof AuthenticatedPagosRoute
+  '/clientes/$id': typeof AuthenticatedClientesIdRoute
+  '/sesiones/$id': typeof AuthenticatedSesionesIdRoute
+  '/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/reservas/': typeof AuthenticatedReservasIndexRoute
+  '/sesiones/': typeof AuthenticatedSesionesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/reservar': typeof ReservarRoute
+  '/calendario': typeof AuthenticatedCalendarioRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/pagos': typeof AuthenticatedPagosRoute
+  '/clientes/$id': typeof AuthenticatedClientesIdRoute
+  '/sesiones/$id': typeof AuthenticatedSesionesIdRoute
+  '/clientes': typeof AuthenticatedClientesIndexRoute
+  '/reservas': typeof AuthenticatedReservasIndexRoute
+  '/sesiones': typeof AuthenticatedSesionesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/reservar': typeof ReservarRoute
+  '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/pagos': typeof AuthenticatedPagosRoute
+  '/_authenticated/clientes/$id': typeof AuthenticatedClientesIdRoute
+  '/_authenticated/sesiones/$id': typeof AuthenticatedSesionesIdRoute
+  '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
+  '/_authenticated/reservas/': typeof AuthenticatedReservasIndexRoute
+  '/_authenticated/sesiones/': typeof AuthenticatedSesionesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reservar'
+    | '/calendario'
+    | '/dashboard'
+    | '/pagos'
+    | '/clientes/$id'
+    | '/sesiones/$id'
+    | '/clientes/'
+    | '/reservas/'
+    | '/sesiones/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/reservar'
+    | '/calendario'
+    | '/dashboard'
+    | '/pagos'
+    | '/clientes/$id'
+    | '/sesiones/$id'
+    | '/clientes'
+    | '/reservas'
+    | '/sesiones'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/reservar'
+    | '/_authenticated/calendario'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/pagos'
+    | '/_authenticated/clientes/$id'
+    | '/_authenticated/sesiones/$id'
+    | '/_authenticated/clientes/'
+    | '/_authenticated/reservas/'
+    | '/_authenticated/sesiones/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  ReservarRoute: typeof ReservarRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +185,117 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reservar': {
+      id: '/reservar'
+      path: '/reservar'
+      fullPath: '/reservar'
+      preLoaderRoute: typeof ReservarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/calendario': {
+      id: '/_authenticated/calendario'
+      path: '/calendario'
+      fullPath: '/calendario'
+      preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pagos': {
+      id: '/_authenticated/pagos'
+      path: '/pagos'
+      fullPath: '/pagos'
+      preLoaderRoute: typeof AuthenticatedPagosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clientes/': {
+      id: '/_authenticated/clientes/'
+      path: '/clientes'
+      fullPath: '/clientes/'
+      preLoaderRoute: typeof AuthenticatedClientesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/clientes/$id': {
+      id: '/_authenticated/clientes/$id'
+      path: '/clientes/$id'
+      fullPath: '/clientes/$id'
+      preLoaderRoute: typeof AuthenticatedClientesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reservas/': {
+      id: '/_authenticated/reservas/'
+      path: '/reservas'
+      fullPath: '/reservas/'
+      preLoaderRoute: typeof AuthenticatedReservasIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sesiones/': {
+      id: '/_authenticated/sesiones/'
+      path: '/sesiones'
+      fullPath: '/sesiones/'
+      preLoaderRoute: typeof AuthenticatedSesionesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sesiones/$id': {
+      id: '/_authenticated/sesiones/$id'
+      path: '/sesiones/$id'
+      fullPath: '/sesiones/$id'
+      preLoaderRoute: typeof AuthenticatedSesionesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedPagosRoute: typeof AuthenticatedPagosRoute
+  AuthenticatedClientesIdRoute: typeof AuthenticatedClientesIdRoute
+  AuthenticatedSesionesIdRoute: typeof AuthenticatedSesionesIdRoute
+  AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
+  AuthenticatedReservasIndexRoute: typeof AuthenticatedReservasIndexRoute
+  AuthenticatedSesionesIndexRoute: typeof AuthenticatedSesionesIndexRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedPagosRoute: AuthenticatedPagosRoute,
+  AuthenticatedClientesIdRoute: AuthenticatedClientesIdRoute,
+  AuthenticatedSesionesIdRoute: AuthenticatedSesionesIdRoute,
+  AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
+  AuthenticatedReservasIndexRoute: AuthenticatedReservasIndexRoute,
+  AuthenticatedSesionesIndexRoute: AuthenticatedSesionesIndexRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  ReservarRoute: ReservarRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
