@@ -244,11 +244,7 @@ export function BookingExperience() {
                   />
                 </Field>
                 <Field label="WhatsApp">
-                  <Input
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="bg-card"
-                  />
+                  <PhoneInput value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
                 </Field>
                 <Field label="Email">
                   <Input
