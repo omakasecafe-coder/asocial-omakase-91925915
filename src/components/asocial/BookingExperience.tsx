@@ -9,6 +9,7 @@ import { BookingStepper } from "@/components/asocial/BookingStepper";
 import { AvailabilityBadge } from "@/components/asocial/AvailabilityBadge";
 import { EmptyState } from "@/components/asocial/EmptyState";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
+import bgLino from "@/assets/background-lino.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, joinWaitlist, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";
