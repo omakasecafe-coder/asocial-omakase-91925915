@@ -95,8 +95,9 @@ export function BookingExperience() {
         />
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-carbon/70"
+          className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-carbon/80 via-carbon/55 to-carbon/70"
         />
+
 
 
         <div className="mx-auto max-w-2xl">
