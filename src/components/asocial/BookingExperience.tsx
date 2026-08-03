@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BookingStepper } from "@/components/asocial/BookingStepper";
 import { AvailabilityBadge } from "@/components/asocial/AvailabilityBadge";
 import { EmptyState } from "@/components/asocial/EmptyState";
+import { PhoneInput } from "@/components/asocial/PhoneInput";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 import bgLino from "@/assets/background-lino.png.asset.json";
 import bgCarbon from "@/assets/background-carbon.png.asset.json";
