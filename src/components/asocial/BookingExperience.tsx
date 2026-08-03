@@ -87,10 +87,13 @@ export function BookingExperience() {
       className="min-h-screen bg-background bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bgLino.url})` }}
     >
-      <header
-        className="bg-carbon bg-cover bg-center bg-no-repeat px-5 pb-14 pt-12 text-lino md:px-10 md:pb-20 md:pt-16"
-        style={{ backgroundImage: `url(${bgCarbon.url})` }}
-      >
+      <header className="sticky top-0 z-50 px-5 pb-14 pt-12 text-lino md:px-10 md:pb-20 md:pt-16">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${bgCarbon.url})` }}
+        />
+
         <div className="mx-auto max-w-2xl">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-14 w-auto md:h-16" />
 
