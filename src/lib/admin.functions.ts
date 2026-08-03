@@ -466,13 +466,13 @@ export const updatePaymentStatus = createServerFn({ method: "POST" })
     if (!before) throw new Error("Pago no encontrado");
 
     const now = new Date().toISOString();
-    const patch: Record<string, unknown> = {
+    const patch = {
       status: data.status,
       status_updated_at: now,
       status_updated_by: context.userId,
+      ...(data.status === "paid" ? { confirmed_at: now } : {}),
+      ...(data.notes ? { notes: [before.notes, data.notes].filter(Boolean).join("\n") } : {}),
     };
-    if (data.status === "paid") patch["confirmed_at"] = now;
-    if (data.notes) patch["notes"] = [before.notes, data.notes].filter(Boolean).join("\n");
 
     const { error } = await context.supabase.from("payments").update(patch).eq("id", data.paymentId);
     if (error) throw new Error(error.message);
