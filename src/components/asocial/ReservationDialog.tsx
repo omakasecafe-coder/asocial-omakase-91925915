@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PhoneInput } from "@/components/asocial/PhoneInput";
 import { createReservationAdmin } from "@/lib/admin.functions";
 import { hour, longDay, money, seatsLabel, todayISO } from "@/lib/format";
 import { sessionStats, sessionLabelKey } from "@/lib/derive";
@@ -55,7 +56,7 @@ export function ReservationDialog({
     lastName: "",
     phone: "",
     email: "",
-    guestCount: 2,
+    guestCount: 1,
     reservationStatus: "confirmed" as ReservationStatus,
     paymentStatus: "pending" as PaymentStatus,
     notes: "",
@@ -204,7 +205,7 @@ export function ReservationDialog({
                 <Input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
               </Field>
               <Field label="WhatsApp">
-                <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+                <PhoneInput value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
               </Field>
               <Field label="Email">
                 <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />

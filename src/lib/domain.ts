@@ -104,3 +104,56 @@ export function customerTier(attended: number) {
   if (attended === 1) return "Primera visita";
   return "Sin visitas";
 }
+
+export type AttendanceStatus = "pending" | "arrived" | "no_show";
+
+export const attendanceStatusLabel: Record<AttendanceStatus, string> = {
+  pending: "Pendiente",
+  arrived: "Llegó",
+  no_show: "No llegó",
+};
+
+export const attendanceStatusTone: Record<AttendanceStatus, Tone> = {
+  pending: "muted",
+  arrived: "musgo",
+  no_show: "nogal",
+};
+
+export type PaymentTxnStatus = "pending" | "paid" | "refunded" | "partially_refunded" | "cancelled";
+
+export const paymentTxnStatusLabel: Record<PaymentTxnStatus, string> = {
+  pending: "Pendiente",
+  paid: "Pagado",
+  refunded: "Devuelto",
+  partially_refunded: "Devolución parcial",
+  cancelled: "Cancelado",
+};
+
+export const paymentTxnStatusTone: Record<PaymentTxnStatus, Tone> = {
+  pending: "arcilla",
+  paid: "musgo",
+  refunded: "nogal",
+  partially_refunded: "arcilla",
+  cancelled: "nogal",
+};
+
+export const emailTemplateVariables = [
+  "{{customer_name}}",
+  "{{reservation_date}}",
+  "{{reservation_time}}",
+  "{{party_size}}",
+  "{{reservation_total}}",
+  "{{reservation_status}}",
+  "{{booking_code}}",
+  "{{payment_amount}}",
+  "{{payment_status}}",
+  "{{payment_options}}",
+  "{{business_name}}",
+];
+
+export type AppRole = "admin" | "operator";
+
+export const appRoleLabel: Record<AppRole, string> = {
+  admin: "Administrador",
+  operator: "Operador",
+};

@@ -18,6 +18,7 @@ import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPagosRouteImport } from './routes/_authenticated/pagos'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
+import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
 import { Route as AuthenticatedClientesIdRouteImport } from './routes/_authenticated/clientes.$id'
 import { Route as AuthenticatedReservasIndexRouteImport } from './routes/_authenticated/reservas.index'
@@ -69,6 +70,11 @@ const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
   path: '/reportes',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedUsuariosRoute = AuthenticatedUsuariosRouteImport.update({
+  id: '/usuarios',
+  path: '/usuarios',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedClientesIndexRoute =
   AuthenticatedClientesIndexRouteImport.update({
     id: '/clientes/',
@@ -107,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/pagos': typeof AuthenticatedPagosRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/sesiones/$id': typeof AuthenticatedSesionesIdRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
@@ -122,6 +129,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/pagos': typeof AuthenticatedPagosRoute
   '/reportes': typeof AuthenticatedReportesRoute
+  '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/sesiones/$id': typeof AuthenticatedSesionesIdRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
@@ -139,6 +147,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/pagos': typeof AuthenticatedPagosRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
+  '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/_authenticated/sesiones/$id': typeof AuthenticatedSesionesIdRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
@@ -156,6 +165,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/pagos'
     | '/reportes'
+    | '/usuarios'
     | '/clientes/$id'
     | '/sesiones/$id'
     | '/clientes/'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/pagos'
     | '/reportes'
+    | '/usuarios'
     | '/clientes/$id'
     | '/sesiones/$id'
     | '/clientes'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/pagos'
     | '/_authenticated/reportes'
+    | '/_authenticated/usuarios'
     | '/_authenticated/clientes/$id'
     | '/_authenticated/sesiones/$id'
     | '/_authenticated/clientes/'
@@ -266,6 +278,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/usuarios': {
+      id: '/_authenticated/usuarios'
+      path: '/usuarios'
+      fullPath: '/usuarios'
+      preLoaderRoute: typeof AuthenticatedUsuariosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/clientes/': {
       id: '/_authenticated/clientes/'
       path: '/clientes'
@@ -310,6 +329,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPagosRoute: typeof AuthenticatedPagosRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
+  AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedClientesIdRoute: typeof AuthenticatedClientesIdRoute
   AuthenticatedSesionesIdRoute: typeof AuthenticatedSesionesIdRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
@@ -323,6 +343,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPagosRoute: AuthenticatedPagosRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
+  AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedClientesIdRoute: AuthenticatedClientesIdRoute,
   AuthenticatedSesionesIdRoute: AuthenticatedSesionesIdRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,

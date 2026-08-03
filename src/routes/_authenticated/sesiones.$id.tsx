@@ -56,7 +56,7 @@ function SessionDetail() {
   };
 
   const attend = useMutation({
-    mutationFn: (v: { reservationId: string; status: "attended" | "no_show" | "confirmed" }) =>
+    mutationFn: (v: { reservationId: string; status: "pending" | "arrived" | "no_show" }) =>
       setAttendance({ data: v }),
     onSuccess: invalidate,
     onError: (e) => toast(e instanceof Error ? e.message : "Error"),
@@ -176,17 +176,27 @@ function SessionDetail() {
                       <>
                         <Button
                           size="sm"
-                          variant="ghost"
-                          onClick={() => attend.mutate({ reservationId: r.id, status: "attended" })}
+                          variant={r.attendance_status === "arrived" ? "default" : "ghost"}
+                          onClick={() =>
+                            attend.mutate({
+                              reservationId: r.id,
+                              status: r.attendance_status === "arrived" ? "pending" : "arrived",
+                            })
+                          }
                         >
                           Llegó
                         </Button>
                         <Button
                           size="sm"
-                          variant="ghost"
-                          onClick={() => attend.mutate({ reservationId: r.id, status: "no_show" })}
+                          variant={r.attendance_status === "no_show" ? "default" : "ghost"}
+                          onClick={() =>
+                            attend.mutate({
+                              reservationId: r.id,
+                              status: r.attendance_status === "no_show" ? "pending" : "no_show",
+                            })
+                          }
                         >
-                          No vino
+                          No llegó
                         </Button>
                         {pending > 0 ? (
                           <Button size="sm" variant="outline" onClick={() => setPayFor({ id: r.id, pending })}>

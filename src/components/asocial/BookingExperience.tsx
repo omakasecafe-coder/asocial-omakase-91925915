@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BookingStepper } from "@/components/asocial/BookingStepper";
 import { AvailabilityBadge } from "@/components/asocial/AvailabilityBadge";
 import { EmptyState } from "@/components/asocial/EmptyState";
+import { PhoneInput } from "@/components/asocial/PhoneInput";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 import bgLino from "@/assets/background-lino.png.asset.json";
 import bgCarbon from "@/assets/background-carbon.png.asset.json";
@@ -24,7 +25,7 @@ export function BookingExperience() {
 
   const [step, setStep] = useState<Step>(1);
   const [selected, setSelected] = useState<PublicSession | null>(null);
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(1);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -168,11 +169,7 @@ export function BookingExperience() {
                     />
                   </Field>
                   <Field label="WhatsApp">
-                    <Input
-                      value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                      className="bg-background"
-                    />
+                    <PhoneInput value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
                   </Field>
                   <Field label="Email">
                     <Input
@@ -247,11 +244,7 @@ export function BookingExperience() {
                   />
                 </Field>
                 <Field label="WhatsApp">
-                  <Input
-                    value={form.phone}
-                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="bg-card"
-                  />
+                  <PhoneInput value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
                 </Field>
                 <Field label="Email">
                   <Input

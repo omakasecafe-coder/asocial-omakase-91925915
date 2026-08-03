@@ -23,7 +23,6 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,21 +31,8 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin + "/dashboard" },
-        });
-        if (error) throw error;
-        if (!data.session) {
-          toast("Revisa tu correo para confirmar la cuenta.");
-          return;
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
       await ensureStaffRole();
       navigate({ to: "/dashboard" });
     } catch (error) {
@@ -63,11 +49,9 @@ function AuthPage() {
           <img src={logoDark.url} alt="asocial · café omakase" className="h-12 w-auto" />
         </Link>
 
-        <h1 className="mt-10 text-xl font-medium">
-          {mode === "signin" ? "Entrar al panel" : "Crear acceso"}
-        </h1>
+        <h1 className="mt-10 text-xl font-medium">Entrar al panel</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Este espacio es para el equipo de sala.
+          Este espacio es para el equipo de sala. Los accesos los crea un administrador desde el panel.
         </p>
 
         <form onSubmit={submit} className="mt-8 space-y-4">
@@ -99,16 +83,13 @@ function AuthPage() {
             />
           </div>
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Un momento…" : mode === "signin" ? "Entrar" : "Crear acceso"}
+            {loading ? "Un momento…" : "Entrar"}
           </Button>
         </form>
 
-        <button
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mt-6 text-xs text-muted-foreground underline-offset-4 hover:underline"
-        >
-          {mode === "signin" ? "Aún no tengo acceso" : "Ya tengo acceso"}
-        </button>
+        <p className="mt-6 text-xs text-muted-foreground">
+          ¿Necesitas acceso? Pídelo a un administrador del equipo.
+        </p>
       </div>
     </div>
   );
