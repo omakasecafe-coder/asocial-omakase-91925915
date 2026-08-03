@@ -25,7 +25,7 @@ export function BookingExperience() {
 
   const [step, setStep] = useState<Step>(1);
   const [selected, setSelected] = useState<PublicSession | null>(null);
-  const [guests, setGuests] = useState(2);
+  const [guests, setGuests] = useState(1);
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
