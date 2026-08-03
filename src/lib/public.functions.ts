@@ -51,7 +51,7 @@ const reservationInput = z.object({
 export const createPublicReservation = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => reservationInput.parse(data))
   .handler(async ({ data }) => {
-    const { data: res, error } = await publicClient().rpc("create_reservation", {
+    const { data: res, error } = await publicClient().rpc("public_create_reservation", {
       _session_id: data.sessionId,
       _first_name: data.firstName,
       _last_name: data.lastName ?? "",
@@ -60,12 +60,17 @@ export const createPublicReservation = createServerFn({ method: "POST" })
       _guest_count: data.guestCount,
       _notes: data.notes ?? "",
       _dietary_notes: data.dietary ?? "",
-      _source: "web",
     });
     if (error) throw new Error(error.message);
-    const row = res as unknown as { booking_code: string; total: number; guest_count: number };
+    const row = (Array.isArray(res) ? res[0] : res) as unknown as {
+      booking_code: string;
+      total: number;
+      guest_count: number;
+    };
+    if (!row) throw new Error("No se pudo crear la reserva");
     return { bookingCode: row.booking_code, total: Number(row.total), guests: row.guest_count };
   });
+
 
 const waitlistInput = z.object({
   sessionId: z.string().uuid(),
