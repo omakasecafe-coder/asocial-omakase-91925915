@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const SESSION_FIELDS =
   "id, fecha, hora_inicio, hora_fin, capacidad_maxima, precio_por_persona, ubicacion, estado, notas_internas, descripcion_publica";
 const RESERVATION_FIELDS =
-  "id, booking_code, session_id, customer_id, guest_count, subtotal, discount, total, reservation_status, payment_status, source, notes, dietary_notes, checked_in_at, cancelled_at, cancellation_reason, created_at";
+  "id, booking_code, session_id, customer_id, guest_count, subtotal, discount, total, reservation_status, payment_status, source, notes, dietary_notes, checked_in_at, cancelled_at, cancellation_reason, created_at, attendance_status, attendance_at, attendance_by, confirmation_email_sent_at";
 const CUSTOMER_FIELDS =
   "id, first_name, last_name, email, phone, instagram, birthday, acquisition_source, notes, created_at";
 
@@ -26,14 +26,18 @@ export const ensureStaffRole = createServerFn({ method: "POST" })
 export const getWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [sessions, reservations, customers, payments, blocks] = await Promise.all([
+    const [sessions, reservations, customers, payments, blocks, refunds] = await Promise.all([
       context.supabase.from("sessions").select(SESSION_FIELDS).order("fecha").order("hora_inicio"),
       context.supabase.from("reservations").select(RESERVATION_FIELDS).order("created_at", { ascending: false }),
       context.supabase.from("customers").select(CUSTOMER_FIELDS).order("first_name"),
-      context.supabase.from("payments").select("id, reservation_id, amount, payment_method, paid_at, transaction_reference, notes").order("paid_at", { ascending: false }),
+      context.supabase.from("payments").select("id, reservation_id, amount, payment_method, paid_at, transaction_reference, notes, status, confirmed_at, created_at, status_updated_at").order("paid_at", { ascending: false }),
       context.supabase.from("seat_blocks").select("id, session_id, quantity, reason, notes, created_at"),
+      context.supabase
+        .from("refunds")
+        .select("id, payment_id, reservation_id, customer_id, original_amount, amount, reason, status, processed_by, created_at")
+        .order("created_at", { ascending: false }),
     ]);
-    const err = sessions.error || reservations.error || customers.error || payments.error || blocks.error;
+    const err = sessions.error || reservations.error || customers.error || payments.error || blocks.error || refunds.error;
     if (err) throw new Error(err.message);
     return {
       sessions: sessions.data ?? [],
@@ -41,6 +45,7 @@ export const getWorkspace = createServerFn({ method: "GET" })
       customers: customers.data ?? [],
       payments: payments.data ?? [],
       blocks: blocks.data ?? [],
+      refunds: refunds.data ?? [],
     };
   });
 
