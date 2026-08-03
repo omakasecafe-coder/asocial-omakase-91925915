@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffRole } from "@/lib/admin.functions";
+import logoDark from "@/assets/asocial-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BookingStepper } from "@/components/asocial/BookingStepper";
 import { AvailabilityBadge } from "@/components/asocial/AvailabilityBadge";
 import { EmptyState } from "@/components/asocial/EmptyState";
+import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, joinWaitlist, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";

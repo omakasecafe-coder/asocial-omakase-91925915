@@ -17,6 +17,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 
 const nav = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
