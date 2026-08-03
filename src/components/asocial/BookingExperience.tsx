@@ -99,7 +99,7 @@ export function BookingExperience() {
         />
 
         <div className="mx-auto max-w-2xl">
-          <img src={logoLight.url} alt="asocial · café omakase" className="h-11 w-auto drop-shadow-lg md:h-13" />
+          <img src={logoLight.url} alt="asocial · café omakase" className="h-11 w-auto drop-shadow-lg md:h-[3.25rem]" />
 
           <h2 className="mt-6 text-lg font-medium leading-snug text-lino drop-shadow-md md:text-xl">
             Experiencia Café Omakase
