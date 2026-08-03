@@ -121,34 +121,22 @@ function ReservationsPage() {
                             Cobrar
                           </Button>
                         ) : null}
-                        <Button size="sm" variant="ghost" onClick={() => setMoving(moving === r.id ? null : r.id)}>
+                        <Button size="sm" variant="ghost" onClick={() => setMoving(r.id)}>
                           Mover
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => cancel.mutate(r.id)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setCancelling({ id: r.id, code: r.booking_code })}
+                        >
                           Cancelar
                         </Button>
                       </>
                     ) : null}
                   </div>
                 </div>
-
-                {moving === r.id ? (
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <Select onValueChange={(v) => move.mutate({ reservationId: r.id, sessionId: v })}>
-                      <SelectTrigger className="h-9 w-72">
-                        <SelectValue placeholder="Mover a otra sesión" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ws.sessions
-                          .filter((x) => x.id !== r.session_id && x.estado !== "cancelled")
-                          .map((x) => (
-                            <SelectItem key={x.id} value={x.id}>
-                              {longDay(x.fecha)} · {hour(x.hora_inicio)}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {r.reservation_status === "cancelled" && r.cancellation_reason ? (
+                  <p className="mt-3 text-xs text-muted-foreground">Motivo: {r.cancellation_reason}</p>
                 ) : null}
               </div>
             );
@@ -165,6 +153,28 @@ function ReservationsPage() {
           pending={payFor.pending}
         />
       ) : null}
+      {moving && ws ? (
+        (() => {
+          const target = ws.reservations.find((x) => x.id === moving);
+          return target ? (
+            <MoveReservationDialog
+              open
+              onOpenChange={(o) => !o && setMoving(null)}
+              ws={ws}
+              reservation={target}
+            />
+          ) : null;
+        })()
+      ) : null}
+      {cancelling ? (
+        <CancelReservationDialog
+          open
+          onOpenChange={(o) => !o && setCancelling(null)}
+          reservationId={cancelling.id}
+          bookingCode={cancelling.code}
+        />
+      ) : null}
+
     </AdminShell>
   );
 }
