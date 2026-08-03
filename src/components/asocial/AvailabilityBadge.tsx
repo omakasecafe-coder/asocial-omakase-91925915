@@ -1,12 +1,23 @@
 import { cn } from "@/lib/utils";
-import { seatsLabel } from "@/lib/format";
+
+export function cuposLabel(n: number) {
+  if (n <= 0) return "Completa";
+  if (n === 1) return "Último cupo";
+  return `${n} cupos`;
+}
 
 export function AvailabilityBadge({ available, className }: { available: number; className?: string }) {
   const tone =
     available <= 0 ? "text-carbon border-carbon/30" : available <= 2 ? "text-arcilla border-arcilla/40" : "text-musgo border-musgo/40";
   return (
-    <span className={cn("inline-flex rounded-full border px-2.5 py-0.5 text-xs", tone, className)}>
-      {seatsLabel(available)}
+    <span
+      className={cn(
+        "inline-flex shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] tracking-wide",
+        tone,
+        className,
+      )}
+    >
+      {cuposLabel(available)}
     </span>
   );
 }
