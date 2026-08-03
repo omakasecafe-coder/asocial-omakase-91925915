@@ -23,39 +23,22 @@ import {
   type ReservationStatus,
   type PaymentStatus,
 } from "@/lib/domain";
-import { moveReservation, cancelReservation } from "@/lib/admin.functions";
+import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
+import { CancelReservationDialog } from "@/components/asocial/CancelReservationDialog";
 
 export const Route = createFileRoute("/_authenticated/reservas/")({
   component: ReservationsPage,
 });
 
 function ReservationsPage() {
-  const queryClient = useQueryClient();
   const { data: ws } = useQuery(workspaceQuery());
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [creating, setCreating] = useState(false);
   const [payFor, setPayFor] = useState<{ id: string; pending: number } | null>(null);
   const [moving, setMoving] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
 
-  const move = useMutation({
-    mutationFn: (v: { reservationId: string; sessionId: string }) => moveReservation({ data: v }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      setMoving(null);
-      toast("Reserva movida");
-    },
-    onError: (e) => toast(e instanceof Error ? e.message : "Error"),
-  });
-
-  const cancel = useMutation({
-    mutationFn: (reservationId: string) =>
-      cancelReservation({ data: { reservationId, reason: "Cancelada desde reservas" } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      toast("Reserva cancelada");
-    },
-  });
 
   const rows = useMemo(() => {
     if (!ws) return [];
