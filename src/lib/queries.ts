@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getWorkspace, getSettings } from "@/lib/admin.functions";
+import { getWorkspace, getSettings, getEmailTemplates, listStaffUsers } from "@/lib/admin.functions";
 import { getPublicSessions } from "@/lib/public.functions";
 
 export const workspaceQuery = () =>
@@ -20,9 +20,23 @@ export const publicSessionsQuery = () =>
     queryFn: () => getPublicSessions(),
   });
 
+export const emailTemplatesQuery = () =>
+  queryOptions({
+    queryKey: ["email-templates"],
+    queryFn: () => getEmailTemplates(),
+  });
+
+export const staffUsersQuery = () =>
+  queryOptions({
+    queryKey: ["staff-users"],
+    queryFn: () => listStaffUsers(),
+  });
+
 export type Workspace = Awaited<ReturnType<typeof getWorkspace>>;
 export type SessionRow = Workspace["sessions"][number];
 export type ReservationRow = Workspace["reservations"][number];
 export type CustomerRow = Workspace["customers"][number];
 export type PaymentRow = Workspace["payments"][number];
 export type BlockRow = Workspace["blocks"][number];
+export type RefundRow = Workspace["refunds"][number];
+export type EmailTemplateRow = Awaited<ReturnType<typeof getEmailTemplates>>[number];
