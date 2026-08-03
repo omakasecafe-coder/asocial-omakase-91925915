@@ -193,9 +193,17 @@ function SessionDetail() {
                             Cobrar
                           </Button>
                         ) : null}
-                        <Button size="sm" variant="ghost" onClick={() => cancel.mutate(r.id)}>
+                        <Button size="sm" variant="ghost" onClick={() => setMoving(r.id)}>
+                          Mover
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setCancelling({ id: r.id, code: r.booking_code })}
+                        >
                           Cancelar
                         </Button>
+
                       </>
                     ) : null}
                   </div>
