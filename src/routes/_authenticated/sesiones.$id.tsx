@@ -30,7 +30,9 @@ import {
   type BlockReason,
   type SessionStatus,
 } from "@/lib/domain";
-import { blockSeats, removeBlock, setAttendance, cancelReservation } from "@/lib/admin.functions";
+import { blockSeats, removeBlock, setAttendance } from "@/lib/admin.functions";
+import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
+import { CancelReservationDialog } from "@/components/asocial/CancelReservationDialog";
 
 export const Route = createFileRoute("/_authenticated/sesiones/$id")({
   component: SessionDetail,
@@ -43,7 +45,10 @@ function SessionDetail() {
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [payFor, setPayFor] = useState<{ id: string; pending: number } | null>(null);
+  const [moving, setMoving] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
   const [blockForm, setBlockForm] = useState({ quantity: 1, reason: "invitado" as BlockReason, notes: "" });
+
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["workspace"] });
