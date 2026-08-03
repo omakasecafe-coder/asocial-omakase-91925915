@@ -87,7 +87,7 @@ export function BookingExperience() {
       className="min-h-screen bg-background bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bgLino.url})` }}
     >
-      <header className="sticky top-0 z-50 px-5 pb-14 pt-12 text-lino md:px-10 md:pb-20 md:pt-16">
+      <header className="sticky top-0 z-50 px-5 pb-9 pt-8 text-lino md:px-10 md:pb-14 md:pt-12">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
@@ -98,29 +98,27 @@ export function BookingExperience() {
           className="pointer-events-none absolute inset-0 -z-10 bg-gradient-to-b from-carbon/70 via-carbon/45 to-carbon/60"
         />
 
-
-
-
         <div className="mx-auto max-w-2xl">
-          <img src={logoLight.url} alt="asocial · café omakase" className="h-14 w-auto drop-shadow-lg md:h-16" />
+          <img src={logoLight.url} alt="asocial · café omakase" className="h-11 w-auto drop-shadow-lg md:h-13" />
 
-          <p className="mt-10 max-w-md text-base leading-relaxed text-lino drop-shadow-md">
+          <h2 className="mt-6 text-lg font-medium leading-snug text-lino drop-shadow-md md:text-xl">
+            Experiencia Café Omakase
+          </h2>
+          <p className="mt-1.5 max-w-md text-sm leading-relaxed text-lino/80 drop-shadow-md">
             Una experiencia guiada para descubrir el café con calma.
           </p>
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-5 py-10 md:px-10 md:py-14">
-        {step < 4 ? <BookingStepper step={step} className="mb-10" /> : null}
+      <main className="mx-auto max-w-2xl px-5 py-8 md:px-10 md:py-12">
+        {step < 4 ? <BookingStepper step={step} className="mb-8" /> : null}
 
         {step === 1 ? (
           <section>
-            <h1 className="text-xl font-medium">Elige cuándo venir</h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Mostramos solo los momentos que aún tienen lugar.
-            </p>
+            <h1 className="text-lg font-medium">Próximas experiencias</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Elige el horario que prefieras.</p>
 
-            <div className="mt-8 space-y-3">
+            <div className="mt-6 space-y-3">
               {isLoading ? (
                 <p className="text-sm text-muted-foreground">Preparando las sesiones…</p>
               ) : sessions.length === 0 ? (
@@ -131,38 +129,53 @@ export function BookingExperience() {
               ) : (
                 sessions.map((session) => {
                   const full = session.available <= 0;
+                  const open = () => {
+                    if (full) {
+                      setWaitlistFor(session);
+                      return;
+                    }
+                    setSelected(session);
+                    setGuests(1);
+                    setStep(2);
+                  };
                   return (
                     <div
                       key={session.id}
                       className={cn(
-                        "card-soft flex items-center justify-between gap-4 px-5 py-4 transition-colors duration-200",
+                        "card-soft bg-card/85 px-4 py-3.5 transition-colors duration-200",
                         full ? "opacity-70" : "cursor-pointer hover:border-nogal/40",
                       )}
-                      onClick={() => {
-                        if (full) {
-                          setWaitlistFor(session);
-                          return;
-                        }
-                        setSelected(session);
-                        setGuests(1);
-                        setStep(2);
-                      }}
+                      onClick={open}
                     >
-                      <div className="min-w-0">
-                        <p className="text-sm text-foreground">{relativeDay(session.fecha)}</p>
-                        <p className="mt-1 text-lg font-medium">{hour(session.hora_inicio)}</p>
-                        {session.descripcion_publica ? (
-                          <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                            {session.descripcion_publica}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                            {relativeDay(session.fecha)}
                           </p>
-                        ) : null}
+                          <p className="mt-0.5 text-lg font-medium leading-tight">{hour(session.hora_inicio)}</p>
+                          {session.descripcion_publica ? (
+                            <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-muted-foreground">
+                              {session.descripcion_publica}
+                            </p>
+                          ) : null}
+                        </div>
+                        <AvailabilityBadge available={session.available} />
                       </div>
-                      <AvailabilityBadge available={session.available} />
+                      <Button
+                        className="mt-3 w-full rounded-xl"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          open();
+                        }}
+                      >
+                        {full ? "Lista de espera" : "Reservar"}
+                      </Button>
                     </div>
                   );
                 })
               )}
             </div>
+
 
             {waitlistFor ? (
               <div className="card-soft bg-card/85 mt-8 p-5">
