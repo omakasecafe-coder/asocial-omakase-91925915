@@ -144,7 +144,7 @@ export function BookingExperience() {
                           return;
                         }
                         setSelected(session);
-                        setGuests(Math.min(2, session.available));
+                        setGuests(1);
                         setStep(2);
                       }}
                     >
