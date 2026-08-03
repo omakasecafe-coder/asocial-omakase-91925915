@@ -84,7 +84,7 @@ export function BookingExperience() {
 
   return (
     <div
-      className="min-h-screen bg-background bg-cover bg-center bg-no-repeat"
+      className="flex min-h-screen flex-col bg-background bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bgLino.url})` }}
     >
       <header className="sticky top-0 z-50 px-5 pb-9 pt-8 text-lino md:px-10 md:pb-14 md:pt-12">
