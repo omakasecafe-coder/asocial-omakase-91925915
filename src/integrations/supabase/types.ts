@@ -89,38 +89,92 @@ export type Database = {
         }
         Relationships: []
       }
+      email_templates: {
+        Row: {
+          body: string
+          created_at: string
+          enabled: boolean
+          extra_info: string
+          id: string
+          name: string
+          signature: string
+          subject: string
+          template_key: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          enabled?: boolean
+          extra_info?: string
+          id?: string
+          name: string
+          signature?: string
+          subject?: string
+          template_key: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          enabled?: boolean
+          extra_info?: string
+          id?: string
+          name?: string
+          signature?: string
+          subject?: string
+          template_key?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
+          confirmed_at: string | null
           created_at: string
+          email_sent_at: string | null
           id: string
           notes: string | null
           paid_at: string
           payment_method: Database["public"]["Enums"]["payment_method"]
           reservation_id: string
-          status: string
+          status: Database["public"]["Enums"]["payment_txn_status"]
+          status_updated_at: string | null
+          status_updated_by: string | null
           transaction_reference: string | null
         }
         Insert: {
           amount: number
+          confirmed_at?: string | null
           created_at?: string
+          email_sent_at?: string | null
           id?: string
           notes?: string | null
           paid_at?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
           reservation_id: string
-          status?: string
+          status?: Database["public"]["Enums"]["payment_txn_status"]
+          status_updated_at?: string | null
+          status_updated_by?: string | null
           transaction_reference?: string | null
         }
         Update: {
           amount?: number
+          confirmed_at?: string | null
           created_at?: string
+          email_sent_at?: string | null
           id?: string
           notes?: string | null
           paid_at?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
           reservation_id?: string
-          status?: string
+          status?: Database["public"]["Enums"]["payment_txn_status"]
+          status_updated_at?: string | null
+          status_updated_by?: string | null
           transaction_reference?: string | null
         }
         Relationships: [
@@ -133,13 +187,81 @@ export type Database = {
           },
         ]
       }
+      refunds: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string | null
+          id: string
+          original_amount: number
+          payment_id: string
+          processed_by: string | null
+          reason: string
+          reservation_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          original_amount: number
+          payment_id: string
+          processed_by?: string | null
+          reason?: string
+          reservation_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          original_amount?: number
+          payment_id?: string
+          processed_by?: string | null
+          reason?: string
+          reservation_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refunds_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
+          attendance_at: string | null
+          attendance_by: string | null
+          attendance_status: Database["public"]["Enums"]["attendance_status"]
           booking_code: string
           cancellation_reason: string | null
           cancelled_at: string | null
           checked_in_at: string | null
           checked_in_by: string | null
+          confirmation_email_sent_at: string | null
           created_at: string
           customer_id: string
           dietary_notes: string | null
@@ -156,11 +278,15 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          attendance_at?: string | null
+          attendance_by?: string | null
+          attendance_status?: Database["public"]["Enums"]["attendance_status"]
           booking_code: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
           checked_in_at?: string | null
           checked_in_by?: string | null
+          confirmation_email_sent_at?: string | null
           created_at?: string
           customer_id: string
           dietary_notes?: string | null
@@ -177,11 +303,15 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          attendance_at?: string | null
+          attendance_by?: string | null
+          attendance_status?: Database["public"]["Enums"]["attendance_status"]
           booking_code?: string
           cancellation_reason?: string | null
           cancelled_at?: string | null
           checked_in_at?: string | null
           checked_in_by?: string | null
+          confirmation_email_sent_at?: string | null
           created_at?: string
           customer_id?: string
           dietary_notes?: string | null
@@ -319,6 +449,7 @@ export type Database = {
           default_price: number
           id: boolean
           logo_url: string | null
+          payment_instructions: string
           payment_methods: string[]
           staff_bootstrap_enabled: boolean
           timezone: string
@@ -334,6 +465,7 @@ export type Database = {
           default_price?: number
           id?: boolean
           logo_url?: string | null
+          payment_instructions?: string
           payment_methods?: string[]
           staff_bootstrap_enabled?: boolean
           timezone?: string
@@ -349,10 +481,41 @@ export type Database = {
           default_price?: number
           id?: boolean
           logo_url?: string | null
+          payment_instructions?: string
           payment_methods?: string[]
           staff_bootstrap_enabled?: boolean
           timezone?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_users: {
+        Row: {
+          active: boolean
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          email: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -456,11 +619,15 @@ export type Database = {
       cancel_reservation: {
         Args: { _reason: string; _reservation_id: string }
         Returns: {
+          attendance_at: string | null
+          attendance_by: string | null
+          attendance_status: Database["public"]["Enums"]["attendance_status"]
           booking_code: string
           cancellation_reason: string | null
           cancelled_at: string | null
           checked_in_at: string | null
           checked_in_by: string | null
+          confirmation_email_sent_at: string | null
           created_at: string
           customer_id: string
           dietary_notes: string | null
@@ -500,11 +667,15 @@ export type Database = {
           _source?: string
         }
         Returns: {
+          attendance_at: string | null
+          attendance_by: string | null
+          attendance_status: Database["public"]["Enums"]["attendance_status"]
           booking_code: string
           cancellation_reason: string | null
           cancelled_at: string | null
           checked_in_at: string | null
           checked_in_by: string | null
+          confirmation_email_sent_at: string | null
           created_at: string
           customer_id: string
           dietary_notes: string | null
@@ -552,11 +723,15 @@ export type Database = {
       move_reservation: {
         Args: { _new_session_id: string; _reservation_id: string }
         Returns: {
+          attendance_at: string | null
+          attendance_by: string | null
+          attendance_status: Database["public"]["Enums"]["attendance_status"]
           booking_code: string
           cancellation_reason: string | null
           cancelled_at: string | null
           checked_in_at: string | null
           checked_in_by: string | null
+          confirmation_email_sent_at: string | null
           created_at: string
           customer_id: string
           dietary_notes: string | null
@@ -621,11 +796,15 @@ export type Database = {
           _reservation_id: string
         }
         Returns: {
+          attendance_at: string | null
+          attendance_by: string | null
+          attendance_status: Database["public"]["Enums"]["attendance_status"]
           booking_code: string
           cancellation_reason: string | null
           cancelled_at: string | null
           checked_in_at: string | null
           checked_in_by: string | null
+          confirmation_email_sent_at: string | null
           created_at: string
           customer_id: string
           dietary_notes: string | null
@@ -654,6 +833,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "operator"
+      attendance_status: "pending" | "arrived" | "no_show"
       block_reason:
         | "invitado"
         | "influencer"
@@ -676,6 +856,12 @@ export type Database = {
         | "paid"
         | "refunded"
         | "complimentary"
+      payment_txn_status:
+        | "pending"
+        | "paid"
+        | "refunded"
+        | "partially_refunded"
+        | "cancelled"
       reservation_status:
         | "pending"
         | "confirmed"
@@ -811,6 +997,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "operator"],
+      attendance_status: ["pending", "arrived", "no_show"],
       block_reason: [
         "invitado",
         "influencer",
@@ -835,6 +1022,13 @@ export const Constants = {
         "paid",
         "refunded",
         "complimentary",
+      ],
+      payment_txn_status: [
+        "pending",
+        "paid",
+        "refunded",
+        "partially_refunded",
+        "cancelled",
       ],
       reservation_status: [
         "pending",
