@@ -165,7 +165,7 @@ export function BookingExperience() {
             </div>
 
             {waitlistFor ? (
-              <div className="card-soft mt-8 p-5">
+              <div className="card-soft bg-card/85 mt-8 p-5">
                 <p className="text-sm">Esta sesión está completa.</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {relativeDay(waitlistFor.fecha)} · {hour(waitlistFor.hora_inicio)}
