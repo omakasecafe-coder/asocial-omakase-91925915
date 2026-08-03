@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { ensureStaffRole } from "@/lib/admin.functions";
+import logoDark from "@/assets/asocial-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -59,8 +60,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-5 py-16">
       <div className="w-full max-w-sm">
         <Link to="/" className="block">
-          <p className="text-lg font-medium">asocial</p>
-          <p className="text-xs text-muted-foreground">café omakase</p>
+          <img src={logoDark.url} alt="asocial · café omakase" className="h-12 w-auto" />
         </Link>
 
         <h1 className="mt-10 text-xl font-medium">

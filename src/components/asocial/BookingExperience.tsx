@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { BookingStepper } from "@/components/asocial/BookingStepper";
 import { AvailabilityBadge } from "@/components/asocial/AvailabilityBadge";
 import { EmptyState } from "@/components/asocial/EmptyState";
+import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, joinWaitlist, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";
@@ -82,8 +83,8 @@ export function BookingExperience() {
     <div className="min-h-screen bg-background">
       <header className="bg-carbon px-5 pb-14 pt-12 text-lino md:px-10 md:pb-20 md:pt-16">
         <div className="mx-auto max-w-2xl">
-          <p className="text-2xl font-medium leading-none">asocial</p>
-          <p className="mt-1.5 text-sm text-lino/60">café omakase</p>
+          <img src={logoLight.url} alt="asocial · café omakase" className="h-14 w-auto md:h-16" />
+
           <p className="mt-10 max-w-md text-base leading-relaxed text-lino/80">
             Una experiencia guiada para descubrir el café con calma.
           </p>
