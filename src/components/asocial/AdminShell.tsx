@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   Ticket,
   Users,
+  UserCog,
   LogOut,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
@@ -27,6 +28,7 @@ const nav = [
   { to: "/clientes", label: "Clientes", icon: Users },
   { to: "/pagos", label: "Pagos", icon: CreditCard },
   { to: "/reportes", label: "Reportes", icon: LineChart },
+  { to: "/usuarios", label: "Usuarios", icon: UserCog },
   { to: "/configuracion", label: "Configuración", icon: SettingsIcon },
 ] as const;
 
