@@ -23,7 +23,7 @@ export function PhoneInput({
   return (
     <div className="flex gap-2">
       <Select value={dial} onValueChange={(d) => onChange(toE164(d, parts.local))}>
-        <SelectTrigger className="w-28 shrink-0">
+        <SelectTrigger className="w-28 shrink-0 bg-card">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -41,6 +41,7 @@ export function PhoneInput({
         placeholder={placeholder}
         value={parts.local}
         onChange={(e) => onChange(toE164(dial, e.target.value))}
+        className="bg-card"
       />
     </div>
   );
