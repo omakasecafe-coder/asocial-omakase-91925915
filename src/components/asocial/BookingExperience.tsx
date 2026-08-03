@@ -90,9 +90,14 @@ export function BookingExperience() {
       <header className="sticky top-0 z-50 px-5 pb-14 pt-12 text-lino md:px-10 md:pb-20 md:pt-16">
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 -z-10 bg-cover bg-center bg-no-repeat"
+          className="pointer-events-none absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: `url(${bgCarbon.url})` }}
         />
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 bg-carbon/70"
+        />
+
 
         <div className="mx-auto max-w-2xl">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-14 w-auto md:h-16" />
