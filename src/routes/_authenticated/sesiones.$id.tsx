@@ -62,15 +62,8 @@ function SessionDetail() {
     onError: (e) => toast(e instanceof Error ? e.message : "Error"),
   });
 
-  const cancel = useMutation({
-    mutationFn: (reservationId: string) =>
-      cancelReservation({ data: { reservationId, reason: "Cancelada desde la sesión" } }),
-    onSuccess: () => {
-      invalidate();
-      toast("Reserva cancelada");
-    },
-    onError: (e) => toast(e instanceof Error ? e.message : "Error"),
-  });
+
+
 
   const addBlock = useMutation({
     mutationFn: () =>
