@@ -257,13 +257,13 @@ export function BookingExperience() {
                     className="bg-card"
                   />
                 </Field>
-                <Field label="WhatsApp">
+                <div>
                   <PhoneInput
                     value={form.phone}
                     onChange={(phone) => setForm({ ...form, phone })}
                     placeholder="Número de celular"
                   />
-                </Field>
+                </div>
                 <Field label="Email">
                   <Input
                     type="email"
