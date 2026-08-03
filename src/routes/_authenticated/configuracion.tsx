@@ -7,8 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { settingsQuery } from "@/lib/queries";
-import { saveSettings } from "@/lib/admin.functions";
+import { Switch } from "@/components/ui/switch";
+import { settingsQuery, emailTemplatesQuery, type EmailTemplateRow } from "@/lib/queries";
+import { saveSettings, saveEmailTemplate } from "@/lib/admin.functions";
+import { emailTemplateVariables } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/configuracion")({
   component: SettingsPage,
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/configuracion")({
 function SettingsPage() {
   const queryClient = useQueryClient();
   const { data } = useQuery(settingsQuery());
+  const { data: templates } = useQuery(emailTemplatesQuery());
   const [form, setForm] = useState({
     business_name: "asocial · café omakase",
     logo_url: "",
@@ -27,6 +30,7 @@ function SettingsPage() {
     default_price: 120,
     cancellation_policy: "",
     confirmation_text: "",
+    payment_instructions: "",
   });
 
   useEffect(() => {
@@ -41,6 +45,7 @@ function SettingsPage() {
       default_price: Number(data.default_price ?? 120),
       cancellation_policy: data.cancellation_policy ?? "",
       confirmation_text: data.confirmation_text ?? "",
+      payment_instructions: data.payment_instructions ?? "",
     });
   }, [data]);
 
@@ -101,13 +106,98 @@ function SettingsPage() {
             className="min-h-24"
           />
         </Field>
+        <Field label="Instrucciones de pago (Yape, Plin, transferencia)" className="sm:col-span-2">
+          <Textarea
+            value={form.payment_instructions}
+            onChange={(e) => setForm({ ...form, payment_instructions: e.target.value })}
+            className="min-h-32"
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            Este texto se inserta en los correos con la variable {"{{payment_options}}"}.
+          </p>
+        </Field>
         <div className="sm:col-span-2">
           <Button onClick={() => save.mutate()} disabled={save.isPending}>
             Guardar cambios
           </Button>
         </div>
       </div>
+
+      <section className="mt-10 max-w-2xl">
+        <h2 className="text-sm font-medium">Plantillas de correo</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Variables disponibles: {emailTemplateVariables.join(" ")}
+        </p>
+        <div className="mt-4 space-y-4">
+          {(templates ?? []).map((t) => (
+            <TemplateCard key={t.id} template={t} />
+          ))}
+        </div>
+      </section>
     </AdminShell>
+  );
+}
+
+function TemplateCard({ template }: { template: EmailTemplateRow }) {
+  const queryClient = useQueryClient();
+  const [form, setForm] = useState({
+    subject: template.subject ?? "",
+    title: template.title ?? "",
+    body: template.body ?? "",
+    extra_info: template.extra_info ?? "",
+    signature: template.signature ?? "",
+    enabled: template.enabled ?? true,
+  });
+
+  const save = useMutation({
+    mutationFn: () => saveEmailTemplate({ data: { id: template.id, ...form } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email-templates"] });
+      toast("Plantilla guardada");
+    },
+    onError: (e) => toast(e instanceof Error ? e.message : "No pudimos guardar la plantilla"),
+  });
+
+  return (
+    <div className="card-soft space-y-4 p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm">{template.name}</p>
+          <p className="text-xs text-muted-foreground">{template.template_key}</p>
+        </div>
+        <Switch checked={form.enabled} onCheckedChange={(enabled) => setForm({ ...form, enabled })} />
+      </div>
+      <Field label="Asunto">
+        <Input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
+      </Field>
+      <Field label="Título">
+        <Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
+      </Field>
+      <Field label="Cuerpo">
+        <Textarea
+          className="min-h-40"
+          value={form.body}
+          onChange={(e) => setForm({ ...form, body: e.target.value })}
+        />
+      </Field>
+      <Field label="Bloque destacado (instrucciones de pago, notas)">
+        <Textarea
+          className="min-h-24"
+          value={form.extra_info}
+          onChange={(e) => setForm({ ...form, extra_info: e.target.value })}
+        />
+      </Field>
+      <Field label="Firma">
+        <Textarea
+          className="min-h-20"
+          value={form.signature}
+          onChange={(e) => setForm({ ...form, signature: e.target.value })}
+        />
+      </Field>
+      <Button onClick={() => save.mutate()} disabled={save.isPending}>
+        {save.isPending ? "Guardando…" : "Guardar plantilla"}
+      </Button>
+    </div>
   );
 }
 
