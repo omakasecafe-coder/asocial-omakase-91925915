@@ -30,7 +30,9 @@ import {
   type BlockReason,
   type SessionStatus,
 } from "@/lib/domain";
-import { blockSeats, removeBlock, setAttendance, cancelReservation } from "@/lib/admin.functions";
+import { blockSeats, removeBlock, setAttendance } from "@/lib/admin.functions";
+import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
+import { CancelReservationDialog } from "@/components/asocial/CancelReservationDialog";
 
 export const Route = createFileRoute("/_authenticated/sesiones/$id")({
   component: SessionDetail,
@@ -43,7 +45,10 @@ function SessionDetail() {
   const [editing, setEditing] = useState(false);
   const [adding, setAdding] = useState(false);
   const [payFor, setPayFor] = useState<{ id: string; pending: number } | null>(null);
+  const [moving, setMoving] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
   const [blockForm, setBlockForm] = useState({ quantity: 1, reason: "invitado" as BlockReason, notes: "" });
+
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["workspace"] });
@@ -57,15 +62,8 @@ function SessionDetail() {
     onError: (e) => toast(e instanceof Error ? e.message : "Error"),
   });
 
-  const cancel = useMutation({
-    mutationFn: (reservationId: string) =>
-      cancelReservation({ data: { reservationId, reason: "Cancelada desde la sesión" } }),
-    onSuccess: () => {
-      invalidate();
-      toast("Reserva cancelada");
-    },
-    onError: (e) => toast(e instanceof Error ? e.message : "Error"),
-  });
+
+
 
   const addBlock = useMutation({
     mutationFn: () =>
@@ -195,9 +193,17 @@ function SessionDetail() {
                             Cobrar
                           </Button>
                         ) : null}
-                        <Button size="sm" variant="ghost" onClick={() => cancel.mutate(r.id)}>
+                        <Button size="sm" variant="ghost" onClick={() => setMoving(r.id)}>
+                          Mover
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setCancelling({ id: r.id, code: r.booking_code })}
+                        >
                           Cancelar
                         </Button>
+
                       </>
                     ) : null}
                   </div>
@@ -283,6 +289,28 @@ function SessionDetail() {
           pending={payFor.pending}
         />
       ) : null}
+      {moving ? (
+        (() => {
+          const target = ws.reservations.find((x) => x.id === moving);
+          return target ? (
+            <MoveReservationDialog
+              open
+              onOpenChange={(o) => !o && setMoving(null)}
+              ws={ws}
+              reservation={target}
+            />
+          ) : null;
+        })()
+      ) : null}
+      {cancelling ? (
+        <CancelReservationDialog
+          open
+          onOpenChange={(o) => !o && setCancelling(null)}
+          reservationId={cancelling.id}
+          bookingCode={cancelling.code}
+        />
+      ) : null}
+
     </AdminShell>
   );
 }

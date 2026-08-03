@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
+
 import { AdminShell } from "@/components/asocial/AdminShell";
 import { StatusPill } from "@/components/asocial/StatusPill";
 import { SearchInput } from "@/components/asocial/SearchInput";
@@ -23,39 +23,22 @@ import {
   type ReservationStatus,
   type PaymentStatus,
 } from "@/lib/domain";
-import { moveReservation, cancelReservation } from "@/lib/admin.functions";
+import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
+import { CancelReservationDialog } from "@/components/asocial/CancelReservationDialog";
 
 export const Route = createFileRoute("/_authenticated/reservas/")({
   component: ReservationsPage,
 });
 
 function ReservationsPage() {
-  const queryClient = useQueryClient();
   const { data: ws } = useQuery(workspaceQuery());
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("all");
   const [creating, setCreating] = useState(false);
   const [payFor, setPayFor] = useState<{ id: string; pending: number } | null>(null);
   const [moving, setMoving] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
 
-  const move = useMutation({
-    mutationFn: (v: { reservationId: string; sessionId: string }) => moveReservation({ data: v }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      setMoving(null);
-      toast("Reserva movida");
-    },
-    onError: (e) => toast(e instanceof Error ? e.message : "Error"),
-  });
-
-  const cancel = useMutation({
-    mutationFn: (reservationId: string) =>
-      cancelReservation({ data: { reservationId, reason: "Cancelada desde reservas" } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      toast("Reserva cancelada");
-    },
-  });
 
   const rows = useMemo(() => {
     if (!ws) return [];
@@ -138,34 +121,22 @@ function ReservationsPage() {
                             Cobrar
                           </Button>
                         ) : null}
-                        <Button size="sm" variant="ghost" onClick={() => setMoving(moving === r.id ? null : r.id)}>
+                        <Button size="sm" variant="ghost" onClick={() => setMoving(r.id)}>
                           Mover
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => cancel.mutate(r.id)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setCancelling({ id: r.id, code: r.booking_code })}
+                        >
                           Cancelar
                         </Button>
                       </>
                     ) : null}
                   </div>
                 </div>
-
-                {moving === r.id ? (
-                  <div className="mt-4 flex flex-wrap items-center gap-2">
-                    <Select onValueChange={(v) => move.mutate({ reservationId: r.id, sessionId: v })}>
-                      <SelectTrigger className="h-9 w-72">
-                        <SelectValue placeholder="Mover a otra sesión" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ws.sessions
-                          .filter((x) => x.id !== r.session_id && x.estado !== "cancelled")
-                          .map((x) => (
-                            <SelectItem key={x.id} value={x.id}>
-                              {longDay(x.fecha)} · {hour(x.hora_inicio)}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                {r.reservation_status === "cancelled" && r.cancellation_reason ? (
+                  <p className="mt-3 text-xs text-muted-foreground">Motivo: {r.cancellation_reason}</p>
                 ) : null}
               </div>
             );
@@ -182,6 +153,28 @@ function ReservationsPage() {
           pending={payFor.pending}
         />
       ) : null}
+      {moving && ws ? (
+        (() => {
+          const target = ws.reservations.find((x) => x.id === moving);
+          return target ? (
+            <MoveReservationDialog
+              open
+              onOpenChange={(o) => !o && setMoving(null)}
+              ws={ws}
+              reservation={target}
+            />
+          ) : null;
+        })()
+      ) : null}
+      {cancelling ? (
+        <CancelReservationDialog
+          open
+          onOpenChange={(o) => !o && setCancelling(null)}
+          reservationId={cancelling.id}
+          bookingCode={cancelling.code}
+        />
+      ) : null}
+
     </AdminShell>
   );
 }
