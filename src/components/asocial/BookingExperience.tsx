@@ -81,7 +81,10 @@ export function BookingExperience() {
   });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div
+      className="min-h-screen bg-background bg-cover bg-center bg-no-repeat"
+      style={{ backgroundImage: `url(${bgLino.url})` }}
+    >
       <header className="bg-carbon px-5 pb-14 pt-12 text-lino md:px-10 md:pb-20 md:pt-16">
         <div className="mx-auto max-w-2xl">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-14 w-auto md:h-16" />
