@@ -289,6 +289,28 @@ function SessionDetail() {
           pending={payFor.pending}
         />
       ) : null}
+      {moving ? (
+        (() => {
+          const target = ws.reservations.find((x) => x.id === moving);
+          return target ? (
+            <MoveReservationDialog
+              open
+              onOpenChange={(o) => !o && setMoving(null)}
+              ws={ws}
+              reservation={target}
+            />
+          ) : null;
+        })()
+      ) : null}
+      {cancelling ? (
+        <CancelReservationDialog
+          open
+          onOpenChange={(o) => !o && setCancelling(null)}
+          reservationId={cancelling.id}
+          bookingCode={cancelling.code}
+        />
+      ) : null}
+
     </AdminShell>
   );
 }
