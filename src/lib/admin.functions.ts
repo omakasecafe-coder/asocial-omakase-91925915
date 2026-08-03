@@ -258,23 +258,482 @@ export const setAttendance = createServerFn({ method: "POST" })
     z
       .object({
         reservationId: z.string().uuid(),
-        status: z.enum(["attended", "no_show", "confirmed"]),
+        status: z.enum(["pending", "arrived", "no_show"]),
       })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    const { logAudit } = await import("@/lib/admin.server");
+    const { data: before } = await context.supabase
+      .from("reservations")
+      .select("attendance_status")
+      .eq("id", data.reservationId)
+      .maybeSingle();
+
+    const now = new Date().toISOString();
     const patch =
-      data.status === "attended"
+      data.status === "pending"
         ? {
-            reservation_status: "attended" as const,
-            checked_in_at: new Date().toISOString(),
-            checked_in_by: context.userId,
+            attendance_status: "pending" as const,
+            attendance_at: null,
+            attendance_by: null,
+            checked_in_at: null,
+            checked_in_by: null,
           }
-        : data.status === "no_show"
-          ? { reservation_status: "no_show" as const }
-          : { reservation_status: "confirmed" as const, checked_in_at: null, checked_in_by: null };
+        : {
+            attendance_status: data.status,
+            attendance_at: now,
+            attendance_by: context.userId,
+            ...(data.status === "arrived"
+              ? { checked_in_at: now, checked_in_by: context.userId }
+              : { checked_in_at: null, checked_in_by: null }),
+          };
+
     const { error } = await context.supabase.from("reservations").update(patch).eq("id", data.reservationId);
     if (error) throw new Error(error.message);
+
+    await logAudit(context.supabase, context.userId, {
+      action: "set_attendance",
+      entityType: "reservation",
+      entityId: data.reservationId,
+      oldValues: { attendance_status: before?.attendance_status ?? null },
+      newValues: { attendance_status: data.status, at: now },
+    });
+    return { ok: true };
+  });
+
+/* ---------------------------- edit reservation ----------------------------- */
+
+export const updateReservation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        reservationId: z.string().uuid(),
+        sessionId: z.string().uuid(),
+        firstName: z.string().trim().min(1).max(80),
+        lastName: z.string().trim().max(80).optional().default(""),
+        email: z.string().trim().max(160).optional().default(""),
+        phone: z.string().trim().max(30).optional().default(""),
+        guestCount: z.number().int().min(1).max(20),
+        notes: z.string().trim().max(500).optional().default(""),
+        reservationStatus: z.enum(["pending", "confirmed", "attended", "no_show", "cancelled"]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { logAudit, sendReservationConfirmedEmail } = await import("@/lib/admin.server");
+
+    const { data: before, error: loadError } = await context.supabase
+      .from("reservations")
+      .select("id, session_id, customer_id, guest_count, notes, reservation_status, discount")
+      .eq("id", data.reservationId)
+      .maybeSingle();
+    if (loadError) throw new Error(loadError.message);
+    if (!before) throw new Error("Reserva no encontrada");
+
+    // Session change goes through the safe RPC (capacity checks + audit trail).
+    if (before.session_id !== data.sessionId) {
+      const { error } = await context.supabase.rpc("move_reservation", {
+        _reservation_id: data.reservationId,
+        _new_session_id: data.sessionId,
+      });
+      if (error) throw new Error(error.message);
+    }
+
+    const { data: session } = await context.supabase
+      .from("sessions")
+      .select("precio_por_persona, capacidad_maxima")
+      .eq("id", data.sessionId)
+      .maybeSingle();
+
+    if (data.guestCount !== before.guest_count) {
+      const { data: available } = await context.supabase.rpc("session_available", {
+        _session_id: data.sessionId,
+      });
+      const room = Number(available ?? 0) + (before.session_id === data.sessionId ? before.guest_count : 0);
+      if (data.guestCount > room) throw new Error(`Solo quedan ${room} lugares en esa sesión`);
+    }
+
+    const price = Number(session?.precio_por_persona ?? 0);
+    const subtotal = price * data.guestCount;
+    const discount = Number(before.discount ?? 0);
+
+    const patch: Record<string, unknown> = {
+      guest_count: data.guestCount,
+      notes: data.notes,
+      subtotal,
+      total: subtotal - discount,
+      reservation_status: data.reservationStatus,
+    };
+    if (data.reservationStatus === "cancelled" && before.reservation_status !== "cancelled") {
+      patch["cancelled_at"] = new Date().toISOString();
+    }
+
+    const { error } = await context.supabase
+      .from("reservations")
+      .update(patch)
+      .eq("id", data.reservationId);
+    if (error) throw new Error(error.message);
+
+    const { error: customerError } = await context.supabase
+      .from("customers")
+      .update({
+        first_name: data.firstName,
+        last_name: data.lastName,
+        email: data.email || null,
+        phone: data.phone || null,
+      })
+      .eq("id", before.customer_id);
+    if (customerError) throw new Error(customerError.message);
+
+    await logAudit(context.supabase, context.userId, {
+      action: "update_reservation",
+      entityType: "reservation",
+      entityId: data.reservationId,
+      oldValues: {
+        session_id: before.session_id,
+        guest_count: before.guest_count,
+        reservation_status: before.reservation_status,
+        notes: before.notes,
+      },
+      newValues: {
+        session_id: data.sessionId,
+        guest_count: data.guestCount,
+        reservation_status: data.reservationStatus,
+        notes: data.notes,
+      },
+    });
+
+    // Real transition into "confirmed" triggers the confirmation email once.
+    let email: { sent: boolean; reason?: string } = { sent: false, reason: "no_transition" };
+    if (data.reservationStatus === "confirmed" && before.reservation_status !== "confirmed") {
+      email = await sendReservationConfirmedEmail(context.supabase, data.reservationId);
+    }
+    return { ok: true, email };
+  });
+
+export const confirmReservation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ reservationId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { logAudit, sendReservationConfirmedEmail } = await import("@/lib/admin.server");
+    const { data: before } = await context.supabase
+      .from("reservations")
+      .select("reservation_status")
+      .eq("id", data.reservationId)
+      .maybeSingle();
+    if (!before) throw new Error("Reserva no encontrada");
+    if (before.reservation_status === "confirmed") return { ok: true, email: { sent: false } };
+
+    const { error } = await context.supabase
+      .from("reservations")
+      .update({ reservation_status: "confirmed" })
+      .eq("id", data.reservationId);
+    if (error) throw new Error(error.message);
+
+    await logAudit(context.supabase, context.userId, {
+      action: "confirm_reservation",
+      entityType: "reservation",
+      entityId: data.reservationId,
+      oldValues: { reservation_status: before.reservation_status },
+      newValues: { reservation_status: "confirmed" },
+    });
+
+    const email = await sendReservationConfirmedEmail(context.supabase, data.reservationId);
+    return { ok: true, email };
+  });
+
+/* ----------------------------- payments admin ------------------------------ */
+
+export const updatePaymentStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        paymentId: z.string().uuid(),
+        status: z.enum(["pending", "paid", "refunded", "partially_refunded", "cancelled"]),
+        notes: z.string().trim().max(300).optional().default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { logAudit, sendPaymentConfirmedEmail } = await import("@/lib/admin.server");
+    const { data: before } = await context.supabase
+      .from("payments")
+      .select("id, status, notes, reservation_id")
+      .eq("id", data.paymentId)
+      .maybeSingle();
+    if (!before) throw new Error("Pago no encontrado");
+
+    const now = new Date().toISOString();
+    const patch: Record<string, unknown> = {
+      status: data.status,
+      status_updated_at: now,
+      status_updated_by: context.userId,
+    };
+    if (data.status === "paid") patch["confirmed_at"] = now;
+    if (data.notes) patch["notes"] = [before.notes, data.notes].filter(Boolean).join("\n");
+
+    const { error } = await context.supabase.from("payments").update(patch).eq("id", data.paymentId);
+    if (error) throw new Error(error.message);
+
+    await logAudit(context.supabase, context.userId, {
+      action: "update_payment_status",
+      entityType: "payment",
+      entityId: data.paymentId,
+      oldValues: { status: before.status },
+      newValues: { status: data.status, at: now },
+    });
+
+    let email: { sent: boolean; reason?: string } = { sent: false, reason: "no_transition" };
+    if (data.status === "paid" && before.status !== "paid") {
+      email = await sendPaymentConfirmedEmail(context.supabase, data.paymentId);
+    }
+    return { ok: true, email };
+  });
+
+export const createRefund = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        paymentId: z.string().uuid(),
+        amount: z.number().min(0.01).max(1000000),
+        reason: z.string().trim().min(1).max(300),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { logAudit, refundStatus } = await import("@/lib/admin.server");
+
+    const { data: payment } = await context.supabase
+      .from("payments")
+      .select("id, reservation_id, amount")
+      .eq("id", data.paymentId)
+      .maybeSingle();
+    if (!payment) throw new Error("Pago no encontrado");
+
+    const { data: previous } = await context.supabase
+      .from("refunds")
+      .select("amount")
+      .eq("payment_id", data.paymentId);
+    const already = (previous ?? []).reduce((sum, r) => sum + Number(r.amount), 0);
+    const paid = Number(payment.amount);
+    const remaining = paid - already;
+    if (data.amount > remaining + 0.001) {
+      throw new Error(`Solo puedes devolver hasta ${remaining.toFixed(2)}`);
+    }
+
+    const { data: reservation } = await context.supabase
+      .from("reservations")
+      .select("customer_id")
+      .eq("id", payment.reservation_id)
+      .maybeSingle();
+
+    const { data: created, error } = await context.supabase
+      .from("refunds")
+      .insert({
+        payment_id: data.paymentId,
+        reservation_id: payment.reservation_id,
+        customer_id: reservation?.customer_id ?? null,
+        original_amount: paid,
+        amount: data.amount,
+        reason: data.reason,
+        status: "processed",
+        processed_by: context.userId,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+
+    const totalRefunded = already + data.amount;
+    const status = refundStatus(paid, totalRefunded);
+    await context.supabase
+      .from("payments")
+      .update({ status, status_updated_at: new Date().toISOString(), status_updated_by: context.userId })
+      .eq("id", data.paymentId);
+
+    if (status === "refunded") {
+      await context.supabase
+        .from("reservations")
+        .update({ payment_status: "refunded" })
+        .eq("id", payment.reservation_id);
+    }
+
+    await logAudit(context.supabase, context.userId, {
+      action: "create_refund",
+      entityType: "payment",
+      entityId: data.paymentId,
+      oldValues: { refunded: already },
+      newValues: { refunded: totalRefunded, amount: data.amount, reason: data.reason, refund_id: created.id },
+    });
+
+    return { ok: true, refundId: created.id, status };
+  });
+
+/* ------------------------------ email templates ---------------------------- */
+
+export const getEmailTemplates = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("email_templates")
+      .select("id, template_key, name, subject, title, body, signature, extra_info, enabled, updated_at")
+      .order("template_key");
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const saveEmailTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        subject: z.string().trim().min(1).max(200),
+        title: z.string().trim().max(200).optional().default(""),
+        body: z.string().trim().max(6000).optional().default(""),
+        signature: z.string().trim().max(1000).optional().default(""),
+        extra_info: z.string().trim().max(2000).optional().default(""),
+        enabled: z.boolean(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { requireAdmin, logAudit } = await import("@/lib/admin.server");
+    await requireAdmin(context.supabase, context.userId);
+    const { id, ...payload } = data;
+    const { error } = await context.supabase.from("email_templates").update(payload).eq("id", id);
+    if (error) throw new Error(error.message);
+    await logAudit(context.supabase, context.userId, {
+      action: "update_email_template",
+      entityType: "email_template",
+      entityId: id,
+      newValues: { subject: payload.subject, enabled: payload.enabled },
+    });
+    return { ok: true };
+  });
+
+/* --------------------------------- users ----------------------------------- */
+
+export const listStaffUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const [{ data: users, error }, { data: roles }] = await Promise.all([
+      context.supabase
+        .from("staff_users")
+        .select("id, user_id, email, full_name, active, created_at")
+        .order("created_at"),
+      context.supabase.from("user_roles").select("user_id, role"),
+    ]);
+    if (error) throw new Error(error.message);
+    const roleByUser = new Map((roles ?? []).map((r) => [r.user_id, r.role]));
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    return {
+      isAdmin: Boolean(isAdmin),
+      currentUserId: context.userId,
+      users: (users ?? []).map((u) => ({ ...u, role: (roleByUser.get(u.user_id) ?? "operator") as string })),
+    };
+  });
+
+export const createStaffUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        email: z.string().trim().email().max(160),
+        password: z.string().min(8).max(72),
+        fullName: z.string().trim().max(120).optional().default(""),
+        role: z.enum(["admin", "operator"]),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { requireAdmin, logAudit } = await import("@/lib/admin.server");
+    await requireAdmin(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
+      email: data.email,
+      password: data.password,
+      email_confirm: true,
+      user_metadata: { full_name: data.fullName },
+    });
+    if (error) throw new Error(error.message);
+    const userId = created.user?.id;
+    if (!userId) throw new Error("No pudimos crear el usuario");
+
+    await supabaseAdmin.from("staff_users").insert({
+      user_id: userId,
+      email: data.email,
+      full_name: data.fullName,
+      active: true,
+    });
+    await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: data.role });
+
+    await logAudit(context.supabase, context.userId, {
+      action: "create_staff_user",
+      entityType: "staff_user",
+      entityId: userId,
+      newValues: { email: data.email, role: data.role },
+    });
+    return { ok: true, userId };
+  });
+
+export const updateStaffUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        userId: z.string().uuid(),
+        fullName: z.string().trim().max(120).optional().default(""),
+        role: z.enum(["admin", "operator"]),
+        active: z.boolean(),
+        password: z.string().max(72).optional().default(""),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { requireAdmin, logAudit } = await import("@/lib/admin.server");
+    await requireAdmin(context.supabase, context.userId);
+    if (data.userId === context.userId && !data.active) {
+      throw new Error("No puedes desactivar tu propio acceso");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: before } = await supabaseAdmin
+      .from("staff_users")
+      .select("full_name, active")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+
+    const { error } = await supabaseAdmin
+      .from("staff_users")
+      .update({ full_name: data.fullName, active: data.active })
+      .eq("user_id", data.userId);
+    if (error) throw new Error(error.message);
+
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", data.userId);
+    await supabaseAdmin.from("user_roles").insert({ user_id: data.userId, role: data.role });
+
+    if (data.password && data.password.length >= 8) {
+      const { error: passwordError } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+        password: data.password,
+      });
+      if (passwordError) throw new Error(passwordError.message);
+    }
+
+    await logAudit(context.supabase, context.userId, {
+      action: "update_staff_user",
+      entityType: "staff_user",
+      entityId: data.userId,
+      oldValues: { full_name: before?.full_name ?? null, active: before?.active ?? null },
+      newValues: { full_name: data.fullName, active: data.active, role: data.role },
+    });
     return { ok: true };
   });
 
