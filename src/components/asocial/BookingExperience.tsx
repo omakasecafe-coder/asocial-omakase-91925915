@@ -165,7 +165,7 @@ export function BookingExperience() {
             </div>
 
             {waitlistFor ? (
-              <div className="card-soft mt-8 p-5">
+              <div className="card-soft bg-card/85 mt-8 p-5">
                 <p className="text-sm">Esta sesión está completa.</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {relativeDay(waitlistFor.fecha)} · {hour(waitlistFor.hora_inicio)}
@@ -178,13 +178,13 @@ export function BookingExperience() {
                       className="bg-background"
                     />
                   </Field>
-                  <Field label="WhatsApp">
+                  <div>
                     <PhoneInput
                       value={form.phone}
                       onChange={(phone) => setForm({ ...form, phone })}
                       placeholder="Número de celular"
                     />
-                  </Field>
+                  </div>
                   <Field label="Email">
                     <Input
                       type="email"
@@ -218,7 +218,7 @@ export function BookingExperience() {
         ) : null}
 
         {step === 2 && selected ? (
-          <section className="card-soft p-6 md:p-8">
+          <section className="card-soft bg-card/85 p-6 md:p-8">
             <h1 className="text-xl font-medium">Cuéntanos quién viene</h1>
             <SessionSummary session={selected} />
 
@@ -257,13 +257,13 @@ export function BookingExperience() {
                     className="bg-card"
                   />
                 </Field>
-                <Field label="WhatsApp">
+                <div>
                   <PhoneInput
                     value={form.phone}
                     onChange={(phone) => setForm({ ...form, phone })}
                     placeholder="Número de celular"
                   />
-                </Field>
+                </div>
                 <Field label="Email">
                   <Input
                     type="email"
