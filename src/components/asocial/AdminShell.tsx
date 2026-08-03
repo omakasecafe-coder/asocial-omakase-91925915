@@ -59,8 +59,7 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
 function Brand() {
   return (
     <div className="px-3 py-1">
-      <p className="text-base font-medium leading-none text-sidebar-foreground">asocial</p>
-      <p className="mt-1 text-xs text-sidebar-foreground/50">café omakase</p>
+      <img src={logoLight.url} alt="asocial · café omakase" className="h-9 w-auto" />
     </div>
   );
 }
