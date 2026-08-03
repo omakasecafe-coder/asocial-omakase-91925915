@@ -144,7 +144,7 @@ export function BookingExperience() {
                           return;
                         }
                         setSelected(session);
-                        setGuests(Math.min(2, session.available));
+                        setGuests(1);
                         setStep(2);
                       }}
                     >
@@ -179,7 +179,11 @@ export function BookingExperience() {
                     />
                   </Field>
                   <Field label="WhatsApp">
-                    <PhoneInput value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
+                    <PhoneInput
+                      value={form.phone}
+                      onChange={(phone) => setForm({ ...form, phone })}
+                      placeholder="Número de celular"
+                    />
                   </Field>
                   <Field label="Email">
                     <Input
@@ -214,7 +218,7 @@ export function BookingExperience() {
         ) : null}
 
         {step === 2 && selected ? (
-          <section>
+          <section className="card-soft p-6 md:p-8">
             <h1 className="text-xl font-medium">Cuéntanos quién viene</h1>
             <SessionSummary session={selected} />
 
@@ -254,7 +258,11 @@ export function BookingExperience() {
                   />
                 </Field>
                 <Field label="WhatsApp">
-                  <PhoneInput value={form.phone} onChange={(phone) => setForm({ ...form, phone })} />
+                  <PhoneInput
+                    value={form.phone}
+                    onChange={(phone) => setForm({ ...form, phone })}
+                    placeholder="Número de celular"
+                  />
                 </Field>
                 <Field label="Email">
                   <Input
