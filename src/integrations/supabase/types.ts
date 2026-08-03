@@ -320,6 +320,7 @@ export type Database = {
           id: boolean
           logo_url: string | null
           payment_methods: string[]
+          staff_bootstrap_enabled: boolean
           timezone: string
           updated_at: string
         }
@@ -334,6 +335,7 @@ export type Database = {
           id?: boolean
           logo_url?: string | null
           payment_methods?: string[]
+          staff_bootstrap_enabled?: boolean
           timezone?: string
           updated_at?: string
         }
@@ -348,6 +350,7 @@ export type Database = {
           id?: boolean
           logo_url?: string | null
           payment_methods?: string[]
+          staff_bootstrap_enabled?: boolean
           timezone?: string
           updated_at?: string
         }
@@ -577,6 +580,23 @@ export type Database = {
         }
       }
       next_booking_code: { Args: { _fecha: string }; Returns: string }
+      public_create_reservation: {
+        Args: {
+          _dietary_notes?: string
+          _email: string
+          _first_name: string
+          _guest_count: number
+          _last_name: string
+          _notes?: string
+          _phone: string
+          _session_id: string
+        }
+        Returns: {
+          booking_code: string
+          guest_count: number
+          total: number
+        }[]
+      }
       public_sessions: {
         Args: never
         Returns: {
