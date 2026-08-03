@@ -214,7 +214,7 @@ export function BookingExperience() {
         ) : null}
 
         {step === 2 && selected ? (
-          <section>
+          <section className="card-soft p-6 md:p-8">
             <h1 className="text-xl font-medium">Cuéntanos quién viene</h1>
             <SessionSummary session={selected} />
 
