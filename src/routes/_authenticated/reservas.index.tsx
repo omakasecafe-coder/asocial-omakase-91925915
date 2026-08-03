@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
+import { toast } from "sonner";
 
 import { AdminShell } from "@/components/asocial/AdminShell";
 import { StatusPill } from "@/components/asocial/StatusPill";
@@ -9,19 +10,24 @@ import { SearchInput } from "@/components/asocial/SearchInput";
 import { EmptyState } from "@/components/asocial/EmptyState";
 import { ReservationDialog } from "@/components/asocial/ReservationDialog";
 import { PaymentDialog } from "@/components/asocial/PaymentDialog";
+import { EditReservationDialog } from "@/components/asocial/EditReservationDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { workspaceQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
+import { confirmReservation, setAttendance } from "@/lib/admin.functions";
 import {
   reservationStatusLabel,
   reservationStatusTone,
   paymentStatusLabel,
   paymentStatusTone,
+  attendanceStatusLabel,
+  attendanceStatusTone,
   sourceLabel,
   type ReservationStatus,
   type PaymentStatus,
+  type AttendanceStatus,
 } from "@/lib/domain";
 import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
 import { CancelReservationDialog } from "@/components/asocial/CancelReservationDialog";
@@ -31,14 +37,31 @@ export const Route = createFileRoute("/_authenticated/reservas/")({
 });
 
 function ReservationsPage() {
+  const queryClient = useQueryClient();
   const { data: ws } = useQuery(workspaceQuery());
   const [q, setQ] = useState("");
-  const [status, setStatus] = useState<string>("all");
+  // Por defecto mostramos lo que necesita atención del equipo.
+  const [status, setStatus] = useState<string>("pending");
   const [creating, setCreating] = useState(false);
   const [payFor, setPayFor] = useState<{ id: string; pending: number } | null>(null);
   const [moving, setMoving] = useState<string | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
 
+  const attendance = useMutation({
+    mutationFn: (v: { reservationId: string; status: AttendanceStatus }) => setAttendance({ data: v }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspace"] }),
+    onError: (e) => toast(e instanceof Error ? e.message : "No pudimos registrar la asistencia"),
+  });
+
+  const confirm = useMutation({
+    mutationFn: (reservationId: string) => confirmReservation({ data: { reservationId } }),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["workspace"] });
+      toast(res.email?.sent ? "Reserva confirmada y correo enviado" : "Reserva confirmada");
+    },
+    onError: (e) => toast(e instanceof Error ? e.message : "No pudimos confirmar la reserva"),
+  });
 
   const rows = useMemo(() => {
     if (!ws) return [];
@@ -87,6 +110,7 @@ function ReservationsPage() {
             const s = ws.sessions.find((x) => x.id === r.session_id);
             const paid = paidAmount(ws, r.id);
             const pending = Number(r.total) - paid;
+            const att = (r.attendance_status ?? "pending") as AttendanceStatus;
             return (
               <div key={r.id} className="card-soft p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -114,13 +138,29 @@ function ReservationsPage() {
                     <StatusPill tone={paymentStatusTone[r.payment_status as PaymentStatus]}>
                       {paymentStatusLabel[r.payment_status as PaymentStatus]}
                     </StatusPill>
+                    {att !== "pending" ? (
+                      <StatusPill tone={attendanceStatusTone[att]}>{attendanceStatusLabel[att]}</StatusPill>
+                    ) : null}
                     {r.reservation_status !== "cancelled" ? (
                       <>
+                        {r.reservation_status === "pending" ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={confirm.isPending}
+                            onClick={() => confirm.mutate(r.id)}
+                          >
+                            Confirmar
+                          </Button>
+                        ) : null}
                         {pending > 0 ? (
                           <Button size="sm" variant="outline" onClick={() => setPayFor({ id: r.id, pending })}>
                             Cobrar
                           </Button>
                         ) : null}
+                        <Button size="sm" variant="ghost" onClick={() => setEditing(r.id)}>
+                          Editar
+                        </Button>
                         <Button size="sm" variant="ghost" onClick={() => setMoving(r.id)}>
                           Mover
                         </Button>
@@ -135,6 +175,48 @@ function ReservationsPage() {
                     ) : null}
                   </div>
                 </div>
+
+                {r.reservation_status !== "cancelled" ? (
+                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                    <span className="text-xs text-muted-foreground">Asistencia:</span>
+                    <Button
+                      size="sm"
+                      variant={att === "arrived" ? "default" : "outline"}
+                      disabled={attendance.isPending}
+                      onClick={() =>
+                        attendance.mutate({
+                          reservationId: r.id,
+                          status: att === "arrived" ? "pending" : "arrived",
+                        })
+                      }
+                    >
+                      Llegó
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={att === "no_show" ? "default" : "outline"}
+                      disabled={attendance.isPending}
+                      onClick={() =>
+                        attendance.mutate({
+                          reservationId: r.id,
+                          status: att === "no_show" ? "pending" : "no_show",
+                        })
+                      }
+                    >
+                      No llegó
+                    </Button>
+                    {r.attendance_at ? (
+                      <span className="text-xs text-muted-foreground">
+                        Registrado el{" "}
+                        {new Date(r.attendance_at).toLocaleString("es-PE", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : null}
+
                 {r.reservation_status === "cancelled" && r.cancellation_reason ? (
                   <p className="mt-3 text-xs text-muted-foreground">Motivo: {r.cancellation_reason}</p>
                 ) : null}
@@ -153,19 +235,32 @@ function ReservationsPage() {
           pending={payFor.pending}
         />
       ) : null}
-      {moving && ws ? (
-        (() => {
-          const target = ws.reservations.find((x) => x.id === moving);
-          return target ? (
-            <MoveReservationDialog
-              open
-              onOpenChange={(o) => !o && setMoving(null)}
-              ws={ws}
-              reservation={target}
-            />
-          ) : null;
-        })()
-      ) : null}
+      {editing && ws
+        ? (() => {
+            const target = ws.reservations.find((x) => x.id === editing);
+            return target ? (
+              <EditReservationDialog
+                open
+                onOpenChange={(o) => !o && setEditing(null)}
+                ws={ws}
+                reservation={target}
+              />
+            ) : null;
+          })()
+        : null}
+      {moving && ws
+        ? (() => {
+            const target = ws.reservations.find((x) => x.id === moving);
+            return target ? (
+              <MoveReservationDialog
+                open
+                onOpenChange={(o) => !o && setMoving(null)}
+                ws={ws}
+                reservation={target}
+              />
+            ) : null;
+          })()
+        : null}
       {cancelling ? (
         <CancelReservationDialog
           open
@@ -174,7 +269,6 @@ function ReservationsPage() {
           bookingCode={cancelling.code}
         />
       ) : null}
-
     </AdminShell>
   );
 }
