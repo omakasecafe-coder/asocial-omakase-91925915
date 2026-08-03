@@ -67,7 +67,8 @@ const settingsInput = z.object({
   default_price: z.number().min(0).max(100000),
   payment_methods: z.array(z.string().max(40)).max(12),
   cancellation_policy: z.string().trim().max(1000).optional().default(""),
-  confirmation_text: z.string().trim().max(1000).optional().default(""),
+  confirmation_text: z.string().trim().max(2000).optional().default(""),
+  payment_instructions: z.string().trim().max(4000).optional().default(""),
 });
 
 export const saveSettings = createServerFn({ method: "POST" })
