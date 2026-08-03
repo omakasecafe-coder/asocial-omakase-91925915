@@ -10,6 +10,7 @@ import { AvailabilityBadge } from "@/components/asocial/AvailabilityBadge";
 import { EmptyState } from "@/components/asocial/EmptyState";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 import bgLino from "@/assets/background-lino.png.asset.json";
+import bgCarbon from "@/assets/background-carbon.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, joinWaitlist, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";
@@ -85,7 +86,10 @@ export function BookingExperience() {
       className="min-h-screen bg-background bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bgLino.url})` }}
     >
-      <header className="bg-carbon px-5 pb-14 pt-12 text-lino md:px-10 md:pb-20 md:pt-16">
+      <header
+        className="bg-carbon bg-cover bg-center bg-no-repeat px-5 pb-14 pt-12 text-lino md:px-10 md:pb-20 md:pt-16"
+        style={{ backgroundImage: `url(${bgCarbon.url})` }}
+      >
         <div className="mx-auto max-w-2xl">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-14 w-auto md:h-16" />
 
