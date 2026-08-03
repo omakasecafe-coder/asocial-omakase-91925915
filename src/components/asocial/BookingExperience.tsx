@@ -375,7 +375,7 @@ export function BookingExperience() {
         ) : null}
       </main>
 
-      <footer className="px-5 pb-12 text-center text-xs text-muted-foreground">
+      <footer className="mt-auto border-t border-border/60 px-5 py-6 text-center text-xs tracking-wide text-muted-foreground">
         menos ruido, más café.
       </footer>
     </div>
