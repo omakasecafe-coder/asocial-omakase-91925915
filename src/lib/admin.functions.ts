@@ -359,16 +359,15 @@ export const updateReservation = createServerFn({ method: "POST" })
     const subtotal = price * data.guestCount;
     const discount = Number(before.discount ?? 0);
 
-    const patch: Record<string, unknown> = {
+    const cancelling = data.reservationStatus === "cancelled" && before.reservation_status !== "cancelled";
+    const patch = {
       guest_count: data.guestCount,
       notes: data.notes,
       subtotal,
       total: subtotal - discount,
       reservation_status: data.reservationStatus,
+      ...(cancelling ? { cancelled_at: new Date().toISOString() } : {}),
     };
-    if (data.reservationStatus === "cancelled" && before.reservation_status !== "cancelled") {
-      patch["cancelled_at"] = new Date().toISOString();
-    }
 
     const { error } = await context.supabase
       .from("reservations")
