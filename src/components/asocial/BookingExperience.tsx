@@ -178,13 +178,13 @@ export function BookingExperience() {
                       className="bg-background"
                     />
                   </Field>
-                  <Field label="WhatsApp">
+                  <div>
                     <PhoneInput
                       value={form.phone}
                       onChange={(phone) => setForm({ ...form, phone })}
                       placeholder="Número de celular"
                     />
-                  </Field>
+                  </div>
                   <Field label="Email">
                     <Input
                       type="email"
