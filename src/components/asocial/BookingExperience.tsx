@@ -358,9 +358,10 @@ export function BookingExperience() {
               <Row label="Estado de pago" value="Pago por confirmar" />
             </div>
             <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-              Te enviamos un correo con los medios de pago. Cuando recibamos y validemos el comprobante por WhatsApp o
-              email, tu reserva quedará confirmada.
+              Te enviamos un correo con el resumen y los medios de pago. Envíanos el comprobante por WhatsApp y tu
+              reserva quedará confirmada.
             </p>
+
             <Button
               variant="ghost"
               className="mt-8 px-0"
