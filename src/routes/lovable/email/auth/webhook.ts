@@ -9,9 +9,9 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "asocial-omakase"
+const SITE_NAME = "asocial"
 const SENDER_DOMAIN = "notify.asocialcafe.com"
-const ROOT_DOMAIN = "asocialcafe.com"
+const ROOT_DOMAIN = "reservas.asocialcafe.com"
 const FROM_DOMAIN = "asocialcafe.com"
 const SITE_URL = `https://${ROOT_DOMAIN}`
 
