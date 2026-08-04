@@ -18,6 +18,7 @@ export const Route = createFileRoute("/auth")({
       { name: "robots", content: "noindex" },
     ],
   }),
+  ssr: false,
   component: AuthPage,
 });
 
