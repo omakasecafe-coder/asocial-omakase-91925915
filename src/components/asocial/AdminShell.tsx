@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LineChart,
   Menu,
+  Mail,
   Settings as SettingsIcon,
   Ticket,
   Users,
