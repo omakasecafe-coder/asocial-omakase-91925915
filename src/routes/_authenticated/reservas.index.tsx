@@ -54,14 +54,8 @@ function ReservationsPage() {
     onError: (e) => toast(e instanceof Error ? e.message : "No pudimos registrar la asistencia"),
   });
 
-  const confirm = useMutation({
-    mutationFn: (reservationId: string) => confirmReservation({ data: { reservationId } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      toast("Reserva confirmada");
-    },
-    onError: (e) => toast(e instanceof Error ? e.message : "No pudimos confirmar la reserva"),
-  });
+
+
 
   const rows = useMemo(() => {
     if (!ws) return [];
