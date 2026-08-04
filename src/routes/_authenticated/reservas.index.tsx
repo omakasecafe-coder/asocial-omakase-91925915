@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { workspaceQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
-import { confirmReservation, setAttendance } from "@/lib/admin.functions";
+import { setAttendance } from "@/lib/admin.functions";
 import {
   reservationStatusLabel,
   reservationStatusTone,
