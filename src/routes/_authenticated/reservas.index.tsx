@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, MessageCircle } from "lucide-react";
@@ -19,6 +19,7 @@ import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
 import { setAttendance } from "@/lib/admin.functions";
 import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
+import { markReservationsSeen } from "@/hooks/use-new-reservations";
 import {
   reservationStage,
   reservationStageLabel,
@@ -53,6 +54,11 @@ function ReservationsPage() {
   const [moving, setMoving] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
+
+  // Al abrir la pantalla, las reservas dejan de ser "nuevas".
+  useEffect(() => {
+    markReservationsSeen();
+  }, [ws]);
 
   const attendance = useMutation({
     mutationFn: (v: { reservationId: string; status: AttendanceStatus }) => setAttendance({ data: v }),

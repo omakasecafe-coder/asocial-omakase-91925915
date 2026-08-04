@@ -19,6 +19,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { useNewReservationsCount } from "@/hooks/use-new-reservations";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 
 const nav = [
@@ -36,6 +37,7 @@ const nav = [
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const newReservations = useNewReservationsCount();
   return (
     <nav className="flex flex-col gap-0.5">
       {nav.map((item) => {
@@ -53,7 +55,15 @@ function NavList({ onNavigate }: { onNavigate?: () => void }) {
             )}
           >
             <item.icon className="h-4 w-4" strokeWidth={1.5} />
-            {item.label}
+            <span className="flex-1">{item.label}</span>
+            {item.to === "/reservas" && newReservations > 0 ? (
+              <span
+                aria-label={`${newReservations} reservas nuevas`}
+                className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-medium leading-none text-destructive-foreground"
+              >
+                {newReservations > 99 ? "99+" : newReservations}
+              </span>
+            ) : null}
           </Link>
         );
       })}
