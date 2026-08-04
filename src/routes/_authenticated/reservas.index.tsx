@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { workspaceQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
-import { confirmReservation, setAttendance } from "@/lib/admin.functions";
+import { setAttendance } from "@/lib/admin.functions";
 import {
   reservationStatusLabel,
   reservationStatusTone,
@@ -54,14 +54,8 @@ function ReservationsPage() {
     onError: (e) => toast(e instanceof Error ? e.message : "No pudimos registrar la asistencia"),
   });
 
-  const confirm = useMutation({
-    mutationFn: (reservationId: string) => confirmReservation({ data: { reservationId } }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      toast("Reserva confirmada");
-    },
-    onError: (e) => toast(e instanceof Error ? e.message : "No pudimos confirmar la reserva"),
-  });
+
+
 
   const rows = useMemo(() => {
     if (!ws) return [];
@@ -143,16 +137,7 @@ function ReservationsPage() {
                     ) : null}
                     {r.reservation_status !== "cancelled" ? (
                       <>
-                        {r.reservation_status === "pending" ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={confirm.isPending}
-                            onClick={() => confirm.mutate(r.id)}
-                          >
-                            Confirmar
-                          </Button>
-                        ) : null}
+
                         {pending > 0 ? (
                           <Button size="sm" variant="outline" onClick={() => setPayFor({ id: r.id, pending })}>
                             Cobrar
