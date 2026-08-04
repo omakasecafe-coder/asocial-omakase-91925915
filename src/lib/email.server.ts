@@ -100,7 +100,7 @@ export async function sendTemplateEmail(args: {
     await sendLovableEmail(
       {
         to: args.to,
-        from: `${args.vars["business_name"] || "asocial"} <hola@${domain}>`,
+        from: `${args.vars["business_name"] || "asocial"} <reservas@asocialcafe.com>`,
         sender_domain: domain,
         subject,
         html,
@@ -108,7 +108,6 @@ export async function sendTemplateEmail(args: {
         label: args.label,
         purpose: "transactional",
         idempotency_key: args.idempotencyKey,
-
       },
       { apiKey },
     );
