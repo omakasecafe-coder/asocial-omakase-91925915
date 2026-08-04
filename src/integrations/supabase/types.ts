@@ -454,6 +454,7 @@ export type Database = {
           staff_bootstrap_enabled: boolean
           timezone: string
           updated_at: string
+          whatsapp_message_template: string
         }
         Insert: {
           address?: string | null
@@ -470,6 +471,7 @@ export type Database = {
           staff_bootstrap_enabled?: boolean
           timezone?: string
           updated_at?: string
+          whatsapp_message_template?: string
         }
         Update: {
           address?: string | null
@@ -486,6 +488,7 @@ export type Database = {
           staff_bootstrap_enabled?: boolean
           timezone?: string
           updated_at?: string
+          whatsapp_message_template?: string
         }
         Relationships: []
       }
