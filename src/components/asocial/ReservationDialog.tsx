@@ -231,11 +231,12 @@ export function ReservationDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(["pending", "confirmed", "attended"] as ReservationStatus[]).map((s) => (
+                {(["pending", "attended"] as ReservationStatus[]).map((s) => (
                   <SelectItem key={s} value={s}>
                     {reservationStatusLabel[s]}
                   </SelectItem>
                 ))}
+
               </SelectContent>
             </Select>
           </Field>

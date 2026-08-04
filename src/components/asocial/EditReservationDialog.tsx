@@ -11,7 +11,14 @@ import { PhoneInput } from "@/components/asocial/PhoneInput";
 import { updateReservation } from "@/lib/admin.functions";
 import { hour, longDay, money, todayISO } from "@/lib/format";
 import { sessionStats, sessionLabelKey } from "@/lib/derive";
-import { reservationStatusLabel, type ReservationStatus } from "@/lib/domain";
+import {
+  reservationStage,
+  reservationStageLabel,
+  stageToStatus,
+  type ReservationStage,
+  type ReservationStatus,
+} from "@/lib/domain";
+
 import type { ReservationRow, Workspace } from "@/lib/queries";
 
 export function EditReservationDialog({
@@ -140,21 +147,24 @@ export function EditReservationDialog({
           </Field>
           <Field label="Estado">
             <Select
-              value={form.reservationStatus}
-              onValueChange={(v) => setForm({ ...form, reservationStatus: v as ReservationStatus })}
+              value={reservationStage(form.reservationStatus)}
+              onValueChange={(v) =>
+                setForm({ ...form, reservationStatus: stageToStatus[v as ReservationStage] })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(reservationStatusLabel) as ReservationStatus[]).map((s) => (
+                {(Object.keys(reservationStageLabel) as ReservationStage[]).map((s) => (
                   <SelectItem key={s} value={s}>
-                    {reservationStatusLabel[s]}
+                    {reservationStageLabel[s]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </Field>
+
 
           <Field label="Notas" className="sm:col-span-2">
             <Textarea

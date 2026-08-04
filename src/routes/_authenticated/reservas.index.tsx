@@ -21,15 +21,19 @@ import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import {
   reservationStatusLabel,
   reservationStatusTone,
+  reservationStage,
+  reservationStageLabel,
   paymentStatusLabel,
   paymentStatusTone,
   attendanceStatusLabel,
   attendanceStatusTone,
   sourceLabel,
+  type ReservationStage,
   type ReservationStatus,
   type PaymentStatus,
   type AttendanceStatus,
 } from "@/lib/domain";
+
 import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
 import { CancelReservationDialog } from "@/components/asocial/CancelReservationDialog";
 
@@ -43,7 +47,7 @@ function ReservationsPage() {
   const { data: settings } = useQuery(settingsQuery());
   const [q, setQ] = useState("");
   // Por defecto mostramos lo que necesita atención del equipo.
-  const [status, setStatus] = useState<string>("pending");
+  const [status, setStatus] = useState<string>("activa");
   const [creating, setCreating] = useState(false);
   const [payFor, setPayFor] = useState<{ id: string; pending: number } | null>(null);
   const [moving, setMoving] = useState<string | null>(null);
@@ -63,7 +67,7 @@ function ReservationsPage() {
     if (!ws) return [];
     const term = q.trim().toLowerCase();
     return ws.reservations.filter((r) => {
-      if (status !== "all" && r.reservation_status !== status) return false;
+      if (status !== "all" && reservationStage(r.reservation_status) !== status) return false;
       if (!term) return true;
       const name = customerName(ws, r.customer_id).toLowerCase();
       return name.includes(term) || r.booking_code.toLowerCase().includes(term);
@@ -89,13 +93,14 @@ function ReservationsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
-            {(Object.keys(reservationStatusLabel) as ReservationStatus[]).map((s) => (
+            {(Object.keys(reservationStageLabel) as ReservationStage[]).map((s) => (
               <SelectItem key={s} value={s}>
-                {reservationStatusLabel[s]}
+                {reservationStageLabel[s]}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
       </div>
 
       <div className="mt-6 space-y-3">
@@ -203,7 +208,7 @@ function ReservationsPage() {
                         })
                       }
                     >
-                      Llegó
+                      Asistió
                     </Button>
                     <Button
                       size="sm"
@@ -216,7 +221,7 @@ function ReservationsPage() {
                         })
                       }
                     >
-                      No llegó
+                      No-Show
                     </Button>
                     {r.attendance_at ? (
                       <span className="text-xs text-muted-foreground">

@@ -30,25 +30,53 @@ export const sessionStatusTone: Record<SessionStatus, Tone> = {
   cancelled: "nogal",
 };
 
+// Los tres estados principales de una reserva (vista de negocio).
+export type ReservationStage = "activa" | "cancelada" | "cerrada";
+
+export const reservationStageLabel: Record<ReservationStage, string> = {
+  activa: "Activa",
+  cancelada: "Cancelada",
+  cerrada: "Cerrada",
+};
+
+export const reservationStageTone: Record<ReservationStage, Tone> = {
+  activa: "musgo",
+  cancelada: "nogal",
+  cerrada: "carbon",
+};
+
+export function reservationStage(status: ReservationStatus | string): ReservationStage {
+  if (status === "cancelled") return "cancelada";
+  if (status === "attended" || status === "no_show") return "cerrada";
+  return "activa";
+}
+
+// Estado que se guarda en base de datos para cada etapa.
+export const stageToStatus: Record<ReservationStage, ReservationStatus> = {
+  activa: "pending",
+  cancelada: "cancelled",
+  cerrada: "attended",
+};
+
 export const reservationStatusLabel: Record<ReservationStatus, string> = {
-  pending: "Por confirmar",
-  confirmed: "Confirmada",
-  attended: "Asistió",
-  no_show: "No asistió",
+  pending: "Activa",
+  confirmed: "Activa",
+  attended: "Cerrada",
+  no_show: "Cerrada",
   cancelled: "Cancelada",
 };
 
 export const reservationStatusTone: Record<ReservationStatus, Tone> = {
-  pending: "arcilla",
+  pending: "musgo",
   confirmed: "musgo",
-  attended: "musgo",
-  no_show: "nogal",
+  attended: "carbon",
+  no_show: "carbon",
   cancelled: "nogal",
 };
 
 export const paymentStatusLabel: Record<PaymentStatus, string> = {
-  pending: "Pago por confirmar",
-  partial: "Pago parcial",
+  pending: "No pagado",
+  partial: "Pagado parcialmente",
   paid: "Pagado",
   refunded: "Devuelto",
   complimentary: "Cortesía",
@@ -61,6 +89,7 @@ export const paymentStatusTone: Record<PaymentStatus, Tone> = {
   refunded: "nogal",
   complimentary: "musgo",
 };
+
 
 export const paymentMethodLabel: Record<PaymentMethod, string> = {
   yape: "Yape",
@@ -109,9 +138,10 @@ export type AttendanceStatus = "pending" | "arrived" | "no_show";
 
 export const attendanceStatusLabel: Record<AttendanceStatus, string> = {
   pending: "Pendiente",
-  arrived: "Llegó",
-  no_show: "No llegó",
+  arrived: "Asistió",
+  no_show: "No-Show",
 };
+
 
 export const attendanceStatusTone: Record<AttendanceStatus, Tone> = {
   pending: "muted",

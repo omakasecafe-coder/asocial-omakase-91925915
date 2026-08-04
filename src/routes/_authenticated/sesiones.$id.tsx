@@ -184,7 +184,7 @@ function SessionDetail() {
                             })
                           }
                         >
-                          Llegó
+                          Asistió
                         </Button>
                         <Button
                           size="sm"
@@ -196,7 +196,7 @@ function SessionDetail() {
                             })
                           }
                         >
-                          No llegó
+                          No-Show
                         </Button>
                         {pending > 0 ? (
                           <Button size="sm" variant="outline" onClick={() => setPayFor({ id: r.id, pending })}>
