@@ -21,15 +21,19 @@ import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import {
   reservationStatusLabel,
   reservationStatusTone,
+  reservationStage,
+  reservationStageLabel,
   paymentStatusLabel,
   paymentStatusTone,
   attendanceStatusLabel,
   attendanceStatusTone,
   sourceLabel,
+  type ReservationStage,
   type ReservationStatus,
   type PaymentStatus,
   type AttendanceStatus,
 } from "@/lib/domain";
+
 import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
 import { CancelReservationDialog } from "@/components/asocial/CancelReservationDialog";
 
@@ -89,13 +93,14 @@ function ReservationsPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos los estados</SelectItem>
-            {(Object.keys(reservationStatusLabel) as ReservationStatus[]).map((s) => (
+            {(Object.keys(reservationStageLabel) as ReservationStage[]).map((s) => (
               <SelectItem key={s} value={s}>
-                {reservationStatusLabel[s]}
+                {reservationStageLabel[s]}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+
       </div>
 
       <div className="mt-6 space-y-3">
