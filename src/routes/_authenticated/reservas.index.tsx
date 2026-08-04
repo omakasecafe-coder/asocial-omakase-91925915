@@ -208,7 +208,7 @@ function ReservationsPage() {
                         })
                       }
                     >
-                      Llegó
+                      Asistió
                     </Button>
                     <Button
                       size="sm"
@@ -221,7 +221,7 @@ function ReservationsPage() {
                         })
                       }
                     >
-                      No llegó
+                      No-Show
                     </Button>
                     {r.attendance_at ? (
                       <span className="text-xs text-muted-foreground">
