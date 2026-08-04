@@ -17,6 +17,7 @@ import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authentic
 import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authenticated/configuracion'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPagosRouteImport } from './routes/_authenticated/pagos'
+import { Route as AuthenticatedProbarCorreoRouteImport } from './routes/_authenticated/probar-correo'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
@@ -67,6 +68,12 @@ const AuthenticatedPagosRoute = AuthenticatedPagosRouteImport.update({
   path: '/pagos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProbarCorreoRoute =
+  AuthenticatedProbarCorreoRouteImport.update({
+    id: '/probar-correo',
+    path: '/probar-correo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
   id: '/reportes',
   path: '/reportes',
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/pagos': typeof AuthenticatedPagosRoute
+  '/probar-correo': typeof AuthenticatedProbarCorreoRoute
   '/reportes': typeof AuthenticatedReportesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/pagos': typeof AuthenticatedPagosRoute
+  '/probar-correo': typeof AuthenticatedProbarCorreoRoute
   '/reportes': typeof AuthenticatedReportesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -162,6 +171,7 @@ export interface FileRoutesById {
   '/_authenticated/configuracion': typeof AuthenticatedConfiguracionRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/pagos': typeof AuthenticatedPagosRoute
+  '/_authenticated/probar-correo': typeof AuthenticatedProbarCorreoRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/configuracion'
     | '/dashboard'
     | '/pagos'
+    | '/probar-correo'
     | '/reportes'
     | '/usuarios'
     | '/clientes/$id'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/configuracion'
     | '/dashboard'
     | '/pagos'
+    | '/probar-correo'
     | '/reportes'
     | '/usuarios'
     | '/clientes/$id'
@@ -219,6 +231,7 @@ export interface FileRouteTypes {
     | '/_authenticated/configuracion'
     | '/_authenticated/dashboard'
     | '/_authenticated/pagos'
+    | '/_authenticated/probar-correo'
     | '/_authenticated/reportes'
     | '/_authenticated/usuarios'
     | '/_authenticated/clientes/$id'
@@ -297,6 +310,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPagosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/probar-correo': {
+      id: '/_authenticated/probar-correo'
+      path: '/probar-correo'
+      fullPath: '/probar-correo'
+      preLoaderRoute: typeof AuthenticatedProbarCorreoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reportes': {
       id: '/_authenticated/reportes'
       path: '/reportes'
@@ -368,6 +388,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConfiguracionRoute: typeof AuthenticatedConfiguracionRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPagosRoute: typeof AuthenticatedPagosRoute
+  AuthenticatedProbarCorreoRoute: typeof AuthenticatedProbarCorreoRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedClientesIdRoute: typeof AuthenticatedClientesIdRoute
@@ -382,6 +403,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConfiguracionRoute: AuthenticatedConfiguracionRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPagosRoute: AuthenticatedPagosRoute,
+  AuthenticatedProbarCorreoRoute: AuthenticatedProbarCorreoRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedClientesIdRoute: AuthenticatedClientesIdRoute,
@@ -405,13 +427,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

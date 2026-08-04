@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   LineChart,
   Menu,
+  Mail,
   Settings as SettingsIcon,
   Ticket,
   Users,
@@ -30,6 +31,7 @@ const nav = [
   { to: "/reportes", label: "Reportes", icon: LineChart },
   { to: "/usuarios", label: "Usuarios", icon: UserCog },
   { to: "/configuracion", label: "Configuración", icon: SettingsIcon },
+  { to: "/probar-correo", label: "Probar correo", icon: Mail },
 ] as const;
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {

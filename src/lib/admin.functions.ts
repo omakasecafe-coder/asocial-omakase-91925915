@@ -818,3 +818,28 @@ export const saveCustomer = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { id: created.id };
   });
+
+/* ------------------------------- email test ------------------------------- */
+
+export const sendTestEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z
+      .object({
+        template: z.enum(["reservation_confirmed", "payment_confirmed"]),
+        to: z.string().trim().email().max(160),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { requireAdmin, sendTestTemplateEmail, logAudit } = await import("./admin.server");
+    await requireAdmin(context.supabase, context.userId);
+    const result = await sendTestTemplateEmail(context.supabase, data.template, data.to);
+    await logAudit(context.supabase, context.userId, {
+      action: "send_test_email",
+      entityType: "email_template",
+      entityId: data.template,
+      newValues: { to: data.to, sent: result.sent, reason: result.reason ?? null },
+    });
+    return result;
+  });
