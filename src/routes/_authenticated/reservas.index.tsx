@@ -143,16 +143,7 @@ function ReservationsPage() {
                     ) : null}
                     {r.reservation_status !== "cancelled" ? (
                       <>
-                        {r.reservation_status === "pending" ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={confirm.isPending}
-                            onClick={() => confirm.mutate(r.id)}
-                          >
-                            Confirmar
-                          </Button>
-                        ) : null}
+
                         {pending > 0 ? (
                           <Button size="sm" variant="outline" onClick={() => setPayFor({ id: r.id, pending })}>
                             Cobrar
