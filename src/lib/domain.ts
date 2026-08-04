@@ -16,7 +16,7 @@ export type Tone = "musgo" | "arcilla" | "carbon" | "nogal" | "muted";
 
 export const sessionStatusLabel: Record<SessionStatus, string> = {
   draft: "Borrador",
-  published: "Publicada",
+  published: "Disponible",
   full: "Completa",
   closed: "Cerrada",
   cancelled: "Cancelada",
