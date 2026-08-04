@@ -17,7 +17,7 @@ import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
 import { setAttendance } from "@/lib/admin.functions";
-import { renderWhatsappMessage, whatsappUrl } from "@/lib/whatsapp";
+import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import {
   reservationStatusLabel,
   reservationStatusTone,
