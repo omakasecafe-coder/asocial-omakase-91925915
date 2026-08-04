@@ -173,9 +173,10 @@ export function EditReservationDialog({
           ) : null}
           {form.reservationStatus === "confirmed" && reservation.reservation_status !== "confirmed" ? (
             <p className="text-xs text-muted-foreground sm:col-span-2">
-              Al confirmar se enviará el correo de confirmación con las instrucciones de pago.
+              La confirmación al cliente se envía automáticamente al validar el pago.
             </p>
           ) : null}
+
         </div>
 
         <DialogFooter>
