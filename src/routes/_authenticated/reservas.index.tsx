@@ -20,10 +20,10 @@ import { hour, money, longDay } from "@/lib/format";
 import { setAttendance } from "@/lib/admin.functions";
 import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import {
-  reservationStatusLabel,
-  reservationStatusTone,
   reservationStage,
   reservationStageLabel,
+  reservationStageTone,
+
   paymentStatusLabel,
   paymentStatusTone,
   attendanceStatusLabel,
@@ -183,9 +183,10 @@ function ReservationsPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusPill tone={reservationStatusTone[r.reservation_status as ReservationStatus]}>
-                      {reservationStatusLabel[r.reservation_status as ReservationStatus]}
+                    <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, s)]}>
+                      {reservationStageLabel[reservationStage(r.reservation_status, s)]}
                     </StatusPill>
+
                     <StatusPill tone={paymentStatusTone[r.payment_status as PaymentStatus]}>
                       {paymentStatusLabel[r.payment_status as PaymentStatus]}
                     </StatusPill>
