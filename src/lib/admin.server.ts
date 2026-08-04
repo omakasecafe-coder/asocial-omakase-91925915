@@ -188,3 +188,38 @@ export function refundStatus(amountPaid: number, refunded: number) {
   if (refunded >= amountPaid) return "refunded" as const;
   return "partially_refunded" as const;
 }
+
+/** Sends a template with sample data to an arbitrary address, for manual testing. */
+export async function sendTestTemplateEmail(supabase: DB, key: string, to: string) {
+  const template = await getTemplate(supabase, key);
+  if (!template) return { sent: false, reason: "template_not_found" };
+
+  const { data: settings } = await supabase
+    .from("settings")
+    .select("business_name, currency, payment_instructions")
+    .eq("id", true)
+    .maybeSingle();
+  const currency = settings?.currency ?? "PEN";
+
+  const vars: Record<string, string> = {
+    customer_name: "Prueba asocial",
+    reservation_date: longDate(new Date().toISOString().slice(0, 10)),
+    reservation_time: "19:00",
+    party_size: "2",
+    reservation_total: money(180, currency),
+    reservation_status: key === "payment_confirmed" ? reservationStatusEs.confirmed! : reservationStatusEs.pending!,
+    booking_code: "TEST-0001",
+    business_name: settings?.business_name ?? "asocial",
+    payment_options: settings?.payment_instructions ?? "",
+    payment_amount: money(180, currency),
+    payment_status: "Pagado",
+  };
+
+  return sendTemplateEmail({
+    template: { ...template, enabled: true },
+    to,
+    vars,
+    idempotencyKey: `test-${key}-${to}-${Date.now()}`,
+    label: `test_${key}`,
+  });
+}
