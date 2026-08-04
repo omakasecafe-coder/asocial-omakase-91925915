@@ -106,7 +106,9 @@ export async function sendTemplateEmail(args: {
         html,
         text,
         label: args.label,
+        purpose: "transactional",
         idempotency_key: args.idempotencyKey,
+
       },
       { apiKey },
     );
