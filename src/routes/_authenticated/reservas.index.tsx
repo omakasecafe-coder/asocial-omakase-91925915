@@ -20,17 +20,16 @@ import { hour, money, longDay } from "@/lib/format";
 import { setAttendance } from "@/lib/admin.functions";
 import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import {
-  reservationStatusLabel,
-  reservationStatusTone,
   reservationStage,
   reservationStageLabel,
+  reservationStageTone,
+
   paymentStatusLabel,
   paymentStatusTone,
   attendanceStatusLabel,
   attendanceStatusTone,
   sourceLabel,
   type ReservationStage,
-  type ReservationStatus,
   type PaymentStatus,
   type AttendanceStatus,
 } from "@/lib/domain";
@@ -68,7 +67,8 @@ function ReservationsPage() {
     if (!ws) return [];
     const term = q.trim().toLowerCase();
     return ws.reservations.filter((r) => {
-      if (status !== "all" && reservationStage(r.reservation_status) !== status) return false;
+      const sess = ws.sessions.find((x) => x.id === r.session_id);
+      if (status !== "all" && reservationStage(r.reservation_status, sess) !== status) return false;
       if (!term) return true;
       const name = customerName(ws, r.customer_id).toLowerCase();
       return name.includes(term) || r.booking_code.toLowerCase().includes(term);
@@ -182,9 +182,10 @@ function ReservationsPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusPill tone={reservationStatusTone[r.reservation_status as ReservationStatus]}>
-                      {reservationStatusLabel[r.reservation_status as ReservationStatus]}
+                    <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, s)]}>
+                      {reservationStageLabel[reservationStage(r.reservation_status, s)]}
                     </StatusPill>
+
                     <StatusPill tone={paymentStatusTone[r.payment_status as PaymentStatus]}>
                       {paymentStatusLabel[r.payment_status as PaymentStatus]}
                     </StatusPill>

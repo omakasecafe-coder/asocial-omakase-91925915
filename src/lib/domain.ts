@@ -45,11 +45,28 @@ export const reservationStageTone: Record<ReservationStage, Tone> = {
   cerrada: "carbon",
 };
 
-export function reservationStage(status: ReservationStatus | string): ReservationStage {
+export type SessionTiming = { fecha: string; hora_fin?: string | null; hora_inicio?: string | null };
+
+// Una sesión se considera pasada cuando su hora de fin (o inicio) ya transcurrió.
+export function sessionEnded(session?: SessionTiming | null): boolean {
+  if (!session?.fecha) return false;
+  const time = session.hora_fin ?? session.hora_inicio ?? "23:59";
+  const end = new Date(`${session.fecha}T${time.slice(0, 8)}`);
+  if (Number.isNaN(end.getTime())) return false;
+  return end.getTime() < Date.now();
+}
+
+export function reservationStage(
+  status: ReservationStatus | string,
+  session?: SessionTiming | null,
+): ReservationStage {
   if (status === "cancelled") return "cancelada";
   if (status === "attended" || status === "no_show") return "cerrada";
+  // Cierre automático: la sesión ya pasó y la reserva no fue cancelada.
+  if (sessionEnded(session)) return "cerrada";
   return "activa";
 }
+
 
 // Estado que se guarda en base de datos para cada etapa.
 export const stageToStatus: Record<ReservationStage, ReservationStatus> = {
