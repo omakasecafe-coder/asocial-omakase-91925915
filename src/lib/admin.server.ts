@@ -207,7 +207,7 @@ export async function sendTestTemplateEmail(supabase: DB, key: string, to: strin
     reservation_time: "19:00",
     party_size: "2",
     reservation_total: money(180, currency),
-    reservation_status: key === "payment_confirmed" ? reservationStatusEs.confirmed! : reservationStatusEs.pending!,
+    reservation_status: key === "payment_confirmed" ? reservationStatusEs["confirmed"]! : reservationStatusEs["pending"]!,
     booking_code: "TEST-0001",
     business_name: settings?.business_name ?? "asocial",
     payment_options: settings?.payment_instructions ?? "",

@@ -40,7 +40,7 @@ const CARDS: { key: TemplateKey; title: string; description: string }[] = [
 
 function TestEmailPage() {
   const [email, setEmail] = useState("");
-  const [last, setLast] = useState<{ key: TemplateKey; ok: boolean; reason?: string } | null>(null);
+  const [last, setLast] = useState<{ key: TemplateKey; ok: boolean; reason?: string | undefined } | null>(null);
   const send = useServerFn(sendTestEmail);
 
   const mutation = useMutation({
