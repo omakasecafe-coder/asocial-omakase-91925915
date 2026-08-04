@@ -160,12 +160,10 @@ function ReservationsPage() {
                     {r.reservation_status !== "cancelled" ? (
                       <>
 
-                        {waLink ? (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={waLink} target="_blank" rel="noopener noreferrer">
-                              <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
-                              WhatsApp
-                            </a>
+                        {customer?.phone ? (
+                          <Button size="sm" variant="outline" onClick={handleWhatsApp}>
+                            <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
+                            WhatsApp
                           </Button>
                         ) : null}
                         {pending > 0 ? (
