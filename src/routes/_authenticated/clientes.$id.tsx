@@ -7,7 +7,7 @@ import { StatusPill } from "@/components/asocial/StatusPill";
 import { workspaceQuery } from "@/lib/queries";
 import { customerStats, paidAmount } from "@/lib/derive";
 import { money, longDay, hour, shortDay } from "@/lib/format";
-import { reservationStatusLabel, reservationStatusTone, type ReservationStatus } from "@/lib/domain";
+import { reservationStage, reservationStageLabel, reservationStageTone } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/clientes/$id")({
   component: CustomerDetail,
@@ -71,8 +71,8 @@ function CustomerDetail() {
                     {r.booking_code} · {r.guest_count}p · {money(paidAmount(ws, r.id))} de {money(r.total)}
                   </p>
                 </div>
-                <StatusPill tone={reservationStatusTone[r.reservation_status as ReservationStatus]}>
-                  {reservationStatusLabel[r.reservation_status as ReservationStatus]}
+                <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, s)]}>
+                  {reservationStageLabel[reservationStage(r.reservation_status, s)]}
                 </StatusPill>
               </div>
             );

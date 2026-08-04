@@ -30,7 +30,6 @@ import {
   attendanceStatusTone,
   sourceLabel,
   type ReservationStage,
-  type ReservationStatus,
   type PaymentStatus,
   type AttendanceStatus,
 } from "@/lib/domain";

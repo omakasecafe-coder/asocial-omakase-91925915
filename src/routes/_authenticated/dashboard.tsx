@@ -8,7 +8,7 @@ import { EmptyState } from "@/components/asocial/EmptyState";
 import { workspaceQuery } from "@/lib/queries";
 import { dashboardMetrics, sessionStats, upcomingSessions, customerName, paidAmount } from "@/lib/derive";
 import { hour, money, pct, relativeDay, longDay } from "@/lib/format";
-import { reservationStatusLabel, reservationStatusTone, type ReservationStatus } from "@/lib/domain";
+import { reservationStage, reservationStageLabel, reservationStageTone } from "@/lib/domain";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -87,8 +87,8 @@ function DashboardPage() {
                         {money(paidAmount(ws, r.id))} de {money(r.total)}
                       </p>
                     </div>
-                    <StatusPill tone={reservationStatusTone[r.reservation_status as ReservationStatus]}>
-                      {reservationStatusLabel[r.reservation_status as ReservationStatus]}
+                    <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, s)]}>
+                      {reservationStageLabel[reservationStage(r.reservation_status, s)]}
                     </StatusPill>
                   </div>
                 );

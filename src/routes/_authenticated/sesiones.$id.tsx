@@ -18,14 +18,14 @@ import { workspaceQuery } from "@/lib/queries";
 import { sessionStats, paidAmount, customerName } from "@/lib/derive";
 import { hour, longDay, money } from "@/lib/format";
 import {
-  reservationStatusLabel,
-  reservationStatusTone,
+  reservationStage,
+  reservationStageLabel,
+  reservationStageTone,
   paymentStatusLabel,
   paymentStatusTone,
   blockReasonLabel,
   sessionStatusLabel,
   sessionStatusTone,
-  type ReservationStatus,
   type PaymentStatus,
   type BlockReason,
   type SessionStatus,
@@ -166,8 +166,8 @@ function SessionDetail() {
                     ) : null}
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
-                    <StatusPill tone={reservationStatusTone[r.reservation_status as ReservationStatus]}>
-                      {reservationStatusLabel[r.reservation_status as ReservationStatus]}
+                    <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, session)]}>
+                      {reservationStageLabel[reservationStage(r.reservation_status, session)]}
                     </StatusPill>
                     <StatusPill tone={paymentStatusTone[r.payment_status as PaymentStatus]}>
                       {paymentStatusLabel[r.payment_status as PaymentStatus]}
