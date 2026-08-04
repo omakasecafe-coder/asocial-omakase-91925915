@@ -110,8 +110,8 @@ async function getTemplate(supabase: DB, key: string): Promise<TemplateRow | nul
   return (data as TemplateRow | null) ?? null;
 }
 
-/** Sends the reservation-confirmed email once per reservation. */
-export async function sendReservationConfirmedEmail(supabase: DB, reservationId: string) {
+/** Sends payment instructions once when a reservation is created. */
+export async function sendReservationPaymentInstructionsEmail(supabase: DB, reservationId: string) {
   const { data: row } = await supabase
     .from("reservations")
     .select("confirmation_email_sent_at")
@@ -127,8 +127,8 @@ export async function sendReservationConfirmedEmail(supabase: DB, reservationId:
     template,
     to: ctx.email,
     vars: ctx.vars,
-    idempotencyKey: `reservation-confirmed-${reservationId}`,
-    label: "reservation_confirmed",
+    idempotencyKey: `reservation-payment-instructions-${reservationId}`,
+    label: "reservation_payment_instructions",
   });
   if (result.sent) {
     await supabase
@@ -139,7 +139,7 @@ export async function sendReservationConfirmedEmail(supabase: DB, reservationId:
   return result;
 }
 
-/** Sends the payment-confirmed email once per payment. */
+/** Sends the final reservation confirmation once a payment has been validated. */
 export async function sendPaymentConfirmedEmail(supabase: DB, paymentId: string) {
   const { data: payment } = await supabase
     .from("payments")
@@ -149,6 +149,14 @@ export async function sendPaymentConfirmedEmail(supabase: DB, paymentId: string)
   if (!payment || payment.email_sent_at || payment.status !== "paid") {
     return { sent: false, reason: "already_sent_or_not_paid" };
   }
+  const { data: previousEmail } = await supabase
+    .from("payments")
+    .select("id")
+    .eq("reservation_id", payment.reservation_id)
+    .not("email_sent_at", "is", null)
+    .limit(1)
+    .maybeSingle();
+  if (previousEmail) return { sent: false, reason: "reservation_confirmation_already_sent" };
 
   const template = await getTemplate(supabase, "payment_confirmed");
   const ctx = await buildEmailContext(supabase, payment.reservation_id, {});

@@ -32,9 +32,9 @@ export function PaymentDialog({
       registerPayment({
         data: { reservationId, amount: Number(amount), method, paidAt, reference: reference.trim(), notes: "" },
       }),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      toast("Pago registrado");
+      toast(res.email?.sent ? "Pago validado y correo de confirmación enviado" : "Pago registrado");
       onOpenChange(false);
     },
     onError: (e) => toast(e instanceof Error ? e.message : "No pudimos registrar el pago"),

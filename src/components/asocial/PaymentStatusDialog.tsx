@@ -31,7 +31,7 @@ export function PaymentStatusDialog({
     mutationFn: () => updatePaymentStatus({ data: { paymentId, status, notes: notes.trim() } }),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      toast(res.email?.sent ? "Estado actualizado y correo de pago enviado" : "Estado de pago actualizado");
+      toast(res.email?.sent ? "Pago validado y correo de confirmación enviado" : "Estado de pago actualizado");
       onOpenChange(false);
     },
     onError: (e) => toast(e instanceof Error ? e.message : "No pudimos actualizar el pago"),
@@ -69,7 +69,7 @@ export function PaymentStatusDialog({
           </div>
           {status === "paid" && current !== "paid" ? (
             <p className="text-xs text-muted-foreground">
-              Al marcar como pagado se enviará el correo de confirmación de pago.
+              Al marcar como pagado se enviará el correo de confirmación de reserva si el total queda completo.
             </p>
           ) : null}
         </div>

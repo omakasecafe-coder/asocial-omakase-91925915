@@ -68,7 +68,21 @@ export const createPublicReservation = createServerFn({ method: "POST" })
       guest_count: number;
     };
     if (!row) throw new Error("No se pudo crear la reserva");
-    return { bookingCode: row.booking_code, total: Number(row.total), guests: row.guest_count };
+
+    const [{ supabaseAdmin }, { sendReservationPaymentInstructionsEmail }] = await Promise.all([
+      import("@/integrations/supabase/client.server"),
+      import("@/lib/admin.server"),
+    ]);
+    const { data: reservation } = await supabaseAdmin
+      .from("reservations")
+      .select("id")
+      .eq("booking_code", row.booking_code)
+      .maybeSingle();
+    const email = reservation
+      ? await sendReservationPaymentInstructionsEmail(supabaseAdmin, reservation.id)
+      : { sent: false, reason: "missing_reservation" };
+
+    return { bookingCode: row.booking_code, total: Number(row.total), guests: row.guest_count, email };
   });
 
 

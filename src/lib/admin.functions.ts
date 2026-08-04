@@ -169,6 +169,7 @@ export const createReservationAdmin = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    const { sendReservationPaymentInstructionsEmail } = await import("@/lib/admin.server");
     const args = {
       _session_id: data.sessionId,
       _first_name: data.firstName || "Invitado",
@@ -185,7 +186,13 @@ export const createReservationAdmin = createServerFn({ method: "POST" })
     };
     const { data: res, error } = await context.supabase.rpc("create_reservation", args);
     if (error) throw new Error(error.message);
-    return { bookingCode: (res as unknown as { booking_code: string }).booking_code };
+    const reservation = res as unknown as { id: string; booking_code: string };
+    const shouldSendPaymentInstructions =
+      data.reservationStatus === "pending" && (data.paymentStatus === "pending" || data.paymentStatus === "partial");
+    const email = shouldSendPaymentInstructions
+      ? await sendReservationPaymentInstructionsEmail(context.supabase, reservation.id)
+      : { sent: false, reason: "not_pending_payment" };
+    return { bookingCode: reservation.booking_code, email };
   });
 
 export const moveReservation = createServerFn({ method: "POST" })
@@ -240,6 +247,7 @@ export const registerPayment = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
+    const { sendPaymentConfirmedEmail } = await import("@/lib/admin.server");
     const { error } = await context.supabase.rpc("register_payment", {
       _reservation_id: data.reservationId,
       _amount: data.amount,
@@ -249,7 +257,28 @@ export const registerPayment = createServerFn({ method: "POST" })
       _notes: data.notes,
     });
     if (error) throw new Error(error.message);
-    return { ok: true };
+    const [{ data: reservation }, { data: payment }] = await Promise.all([
+      context.supabase
+        .from("reservations")
+        .select("payment_status, reservation_status")
+        .eq("id", data.reservationId)
+        .maybeSingle(),
+      context.supabase
+        .from("payments")
+        .select("id")
+        .eq("reservation_id", data.reservationId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    const ready =
+      reservation?.reservation_status === "confirmed" &&
+      (reservation.payment_status === "paid" || reservation.payment_status === "complimentary");
+    const email =
+      ready && payment
+        ? await sendPaymentConfirmedEmail(context.supabase, payment.id)
+        : { sent: false, reason: "payment_not_complete" };
+    return { ok: true, email };
   });
 
 export const setAttendance = createServerFn({ method: "POST" })
@@ -322,7 +351,7 @@ export const updateReservation = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { logAudit, sendReservationConfirmedEmail } = await import("@/lib/admin.server");
+    const { logAudit } = await import("@/lib/admin.server");
 
     const { data: before, error: loadError } = await context.supabase
       .from("reservations")
@@ -404,19 +433,14 @@ export const updateReservation = createServerFn({ method: "POST" })
       },
     });
 
-    // Real transition into "confirmed" triggers the confirmation email once.
-    let email: { sent: boolean; reason?: string } = { sent: false, reason: "no_transition" };
-    if (data.reservationStatus === "confirmed" && before.reservation_status !== "confirmed") {
-      email = await sendReservationConfirmedEmail(context.supabase, data.reservationId);
-    }
-    return { ok: true, email };
+    return { ok: true, email: { sent: false, reason: "confirmation_requires_payment_validation" } };
   });
 
 export const confirmReservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => z.object({ reservationId: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    const { logAudit, sendReservationConfirmedEmail } = await import("@/lib/admin.server");
+    const { logAudit } = await import("@/lib/admin.server");
     const { data: before } = await context.supabase
       .from("reservations")
       .select("reservation_status")
@@ -439,8 +463,7 @@ export const confirmReservation = createServerFn({ method: "POST" })
       newValues: { reservation_status: "confirmed" },
     });
 
-    const email = await sendReservationConfirmedEmail(context.supabase, data.reservationId);
-    return { ok: true, email };
+    return { ok: true, email: { sent: false, reason: "confirmation_requires_payment_validation" } };
   });
 
 /* ----------------------------- payments admin ------------------------------ */
@@ -485,8 +508,34 @@ export const updatePaymentStatus = createServerFn({ method: "POST" })
       newValues: { status: data.status, at: now },
     });
 
+    const [{ data: reservation }, { data: payments }] = await Promise.all([
+      context.supabase
+        .from("reservations")
+        .select("id, total, payment_status, reservation_status")
+        .eq("id", before.reservation_id)
+        .maybeSingle(),
+      context.supabase
+        .from("payments")
+        .select("amount, status")
+        .eq("reservation_id", before.reservation_id),
+    ]);
+    const paidTotal = (payments ?? [])
+      .filter((payment) => payment.status === "paid")
+      .reduce((sum, payment) => sum + Number(payment.amount), 0);
+    const isFullyPaid = Boolean(reservation) && paidTotal >= Number(reservation?.total ?? 0);
+    if (reservation) {
+      await context.supabase
+        .from("reservations")
+        .update({
+          payment_status: isFullyPaid ? "paid" : paidTotal > 0 ? "partial" : "pending",
+          reservation_status:
+            isFullyPaid && reservation.reservation_status === "pending" ? "confirmed" : reservation.reservation_status,
+        })
+        .eq("id", before.reservation_id);
+    }
+
     let email: { sent: boolean; reason?: string } = { sent: false, reason: "no_transition" };
-    if (data.status === "paid" && before.status !== "paid") {
+    if (data.status === "paid" && before.status !== "paid" && isFullyPaid) {
       email = await sendPaymentConfirmedEmail(context.supabase, data.paymentId);
     }
     return { ok: true, email };

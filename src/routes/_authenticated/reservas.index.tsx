@@ -56,9 +56,9 @@ function ReservationsPage() {
 
   const confirm = useMutation({
     mutationFn: (reservationId: string) => confirmReservation({ data: { reservationId } }),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspace"] });
-      toast(res.email?.sent ? "Reserva confirmada y correo enviado" : "Reserva confirmada");
+      toast("Reserva confirmada");
     },
     onError: (e) => toast(e instanceof Error ? e.message : "No pudimos confirmar la reserva"),
   });

@@ -333,11 +333,11 @@ export function BookingExperience() {
               <Row label="Total" value={money(total)} strong />
             </div>
             <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-              A nombre de {form.firstName} {form.lastName}. Te escribiremos al {form.phone}.
+              A nombre de {form.firstName} {form.lastName}. Te enviaremos los medios de pago a {form.email}.
             </p>
             <div className="mt-8 flex gap-2">
               <Button onClick={() => reserve.mutate()} disabled={reserve.isPending}>
-                {reserve.isPending ? "Guardando…" : "Confirmar reserva"}
+                {reserve.isPending ? "Guardando…" : "Registrar reserva"}
               </Button>
               <Button variant="ghost" onClick={() => setStep(2)}>
                 Volver
@@ -358,7 +358,8 @@ export function BookingExperience() {
               <Row label="Estado de pago" value="Pago por confirmar" />
             </div>
             <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
-              Te enviaremos por WhatsApp la información necesaria para completar tu reserva.
+              Te enviamos un correo con los medios de pago. Cuando recibamos y validemos el comprobante por WhatsApp o
+              email, tu reserva quedará confirmada.
             </p>
             <Button
               variant="ghost"

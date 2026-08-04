@@ -75,14 +75,10 @@ export function EditReservationDialog({
           reservationStatus: form.reservationStatus,
         },
       }),
-    onSuccess: (res) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workspace"] });
       queryClient.invalidateQueries({ queryKey: ["public-sessions"] });
-      toast(
-        res.email?.sent
-          ? "Reserva actualizada y correo de confirmación enviado"
-          : "Reserva actualizada",
-      );
+      toast("Reserva actualizada");
       onOpenChange(false);
     },
     onError: (e) => toast(e instanceof Error ? e.message : "No pudimos guardar la reserva"),
