@@ -17,7 +17,7 @@ import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
 import { setAttendance } from "@/lib/admin.functions";
-import { renderWhatsappMessage, whatsappUrl } from "@/lib/whatsapp";
+import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import {
   reservationStatusLabel,
   reservationStatusTone,
@@ -108,23 +108,25 @@ function ReservationsPage() {
             const pending = Number(r.total) - paid;
             const att = (r.attendance_status ?? "pending") as AttendanceStatus;
             const customer = ws.customers.find((c) => c.id === r.customer_id);
-            const waLink = whatsappUrl(
-              customer?.phone,
-              renderWhatsappMessage(
-                (settings as { whatsapp_message_template?: string } | undefined)?.whatsapp_message_template ?? "",
-                {
-                  customer_name: customerName(ws, r.customer_id),
-                  booking_code: r.booking_code,
-                  session_date: s ? longDay(s.fecha) : "",
-                  session_time: s ? hour(s.hora_inicio) : "",
-                  guest_count: String(r.guest_count),
-                  total: money(r.total),
-                  pending_amount: money(Math.max(pending, 0)),
-                  payment_options: settings?.payment_instructions ?? "",
-                  business_name: settings?.business_name ?? "asocial",
-                },
-              ),
-            );
+            const handleWhatsApp = () => {
+              openWhatsApp(
+                customer?.phone,
+                renderWhatsappMessage(
+                  (settings as { whatsapp_message_template?: string } | undefined)?.whatsapp_message_template ?? "",
+                  {
+                    customer_name: customerName(ws, r.customer_id),
+                    booking_code: r.booking_code,
+                    session_date: s ? longDay(s.fecha) : "",
+                    session_time: s ? hour(s.hora_inicio) : "",
+                    guest_count: String(r.guest_count),
+                    total: money(r.total),
+                    pending_amount: money(Math.max(pending, 0)),
+                    payment_options: settings?.payment_instructions ?? "",
+                    business_name: settings?.business_name ?? "asocial",
+                  },
+                ),
+              );
+            };
             return (
               <div key={r.id} className="card-soft p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -158,12 +160,10 @@ function ReservationsPage() {
                     {r.reservation_status !== "cancelled" ? (
                       <>
 
-                        {waLink ? (
-                          <Button size="sm" variant="outline" asChild>
-                            <a href={waLink} target="_blank" rel="noopener noreferrer">
-                              <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
-                              WhatsApp
-                            </a>
+                        {customer?.phone ? (
+                          <Button size="sm" variant="outline" onClick={handleWhatsApp}>
+                            <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
+                            WhatsApp
                           </Button>
                         ) : null}
                         {pending > 0 ? (
