@@ -138,9 +138,10 @@ export type AttendanceStatus = "pending" | "arrived" | "no_show";
 
 export const attendanceStatusLabel: Record<AttendanceStatus, string> = {
   pending: "Pendiente",
-  arrived: "Llegó",
-  no_show: "No llegó",
+  arrived: "Asistió",
+  no_show: "No-Show",
 };
+
 
 export const attendanceStatusTone: Record<AttendanceStatus, Tone> = {
   pending: "muted",
