@@ -91,8 +91,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:title", content: "asocial · café omakase — Reserva tu sesión" },
       { property: "og:description", content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada." },
       { name: "twitter:description", content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada." },
-      { property: "og:image", content: "https://reservas.asocialcafe.com/og-image.png" },
-      { name: "twitter:image", content: "https://reservas.asocialcafe.com/og-image.png" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
