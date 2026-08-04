@@ -37,7 +37,10 @@ export function whatsappNumber(phone: string | null | undefined) {
 export function whatsappUrl(phone: string | null | undefined, message: string) {
   const n = whatsappNumber(phone);
   if (!n) return null;
-  return `https://wa.me/${n}?text=${encodeURIComponent(message)}`;
+  // wa.me redirige a api.whatsapp.com, que bloquea su carga desde previews
+  // embebidos. WhatsApp Web abre directamente como página de nivel superior.
+  const params = new URLSearchParams({ phone: n, text: message });
+  return `https://web.whatsapp.com/send?${params.toString()}`;
 }
 
 /** Abre WhatsApp en una nueva ventana de nivel superior. Si el navegador lo bloquea, copia el enlace y lo muestra en un toast. */
