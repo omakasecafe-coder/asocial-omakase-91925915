@@ -68,7 +68,8 @@ function ReservationsPage() {
     if (!ws) return [];
     const term = q.trim().toLowerCase();
     return ws.reservations.filter((r) => {
-      if (status !== "all" && reservationStage(r.reservation_status) !== status) return false;
+      const sess = ws.sessions.find((x) => x.id === r.session_id);
+      if (status !== "all" && reservationStage(r.reservation_status, sess) !== status) return false;
       if (!term) return true;
       const name = customerName(ws, r.customer_id).toLowerCase();
       return name.includes(term) || r.booking_code.toLowerCase().includes(term);
