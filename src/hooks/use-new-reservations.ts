@@ -27,6 +27,10 @@ export function useNewReservationsCount(): number {
   const sync = useCallback(() => setSeenAt(readSeenAt()), []);
 
   useEffect(() => {
+    // Primera vez: tomamos el momento actual como línea base.
+    if (!window.localStorage.getItem(KEY)) {
+      window.localStorage.setItem(KEY, new Date().toISOString());
+    }
     sync();
     window.addEventListener(EVENT, sync);
     window.addEventListener("storage", sync);
