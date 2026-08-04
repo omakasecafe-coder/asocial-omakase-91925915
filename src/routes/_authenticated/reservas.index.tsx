@@ -13,6 +13,7 @@ import { PaymentDialog } from "@/components/asocial/PaymentDialog";
 import { EditReservationDialog } from "@/components/asocial/EditReservationDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
@@ -74,6 +75,22 @@ function ReservationsPage() {
     });
   }, [ws, q, status]);
 
+  const groups = useMemo(() => {
+    if (!ws) return [] as { key: string; title: string; guests: number; items: typeof rows }[];
+    const map = new Map<string, { key: string; title: string; sort: string; guests: number; items: typeof rows }>();
+    for (const r of rows) {
+      const s = ws.sessions.find((x) => x.id === r.session_id);
+      const key = r.session_id ?? "sin-sesion";
+      const title = s ? `${longDay(s.fecha)} · ${hour(s.hora_inicio)}` : "Sin sesión";
+      const sort = s ? `${s.fecha}T${s.hora_inicio}` : "9999";
+      const g = map.get(key) ?? { key, title, sort, guests: 0, items: [] as typeof rows };
+      g.guests += r.guest_count;
+      g.items.push(r);
+      map.set(key, g);
+    }
+    return [...map.values()].sort((a, b) => a.sort.localeCompare(b.sort));
+  }, [ws, rows]);
+
   return (
     <AdminShell
       title="Reservas"
@@ -103,11 +120,23 @@ function ReservationsPage() {
 
       </div>
 
-      <div className="mt-6 space-y-3">
+      <div className="mt-6">
         {!ws || rows.length === 0 ? (
           <EmptyState title="Sin reservas que coincidan." />
         ) : (
-          rows.map((r) => {
+          <Accordion type="multiple" defaultValue={groups.map((g) => g.key)} className="space-y-3">
+          {groups.map((g) => (
+            <AccordionItem key={g.key} value={g.key} className="card-soft border-0 px-4">
+              <AccordionTrigger className="py-4 hover:no-underline">
+                <div className="flex w-full flex-wrap items-center justify-between gap-2 pr-2 text-left">
+                  <span className="text-sm">{g.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {g.items.length} {g.items.length === 1 ? "reserva" : "reservas"} · {g.guests}p
+                  </span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="space-y-3 pb-4">
+          {g.items.map((r) => {
             const s = ws.sessions.find((x) => x.id === r.session_id);
             const paid = paidAmount(ws, r.id);
             const pending = Number(r.total) - paid;
@@ -240,7 +269,11 @@ function ReservationsPage() {
                 ) : null}
               </div>
             );
-          })
+          })}
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+          </Accordion>
         )}
       </div>
 
