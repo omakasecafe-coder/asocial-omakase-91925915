@@ -13,7 +13,7 @@ import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 import bgLino from "@/assets/background-lino.png.asset.json";
 import bgCarbon from "@/assets/background-carbon.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
-import { createPublicReservation, joinWaitlist, type PublicSession } from "@/lib/public.functions";
+import { createPublicReservation, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -35,7 +35,6 @@ export function BookingExperience() {
     notes: "",
   });
   const [confirmation, setConfirmation] = useState<{ code: string; total: number } | null>(null);
-  const [waitlistFor, setWaitlistFor] = useState<PublicSession | null>(null);
 
   const total = useMemo(
     () => (selected ? Number(selected.precio_por_persona) * guests : 0),
@@ -62,24 +61,6 @@ export function BookingExperience() {
       queryClient.invalidateQueries({ queryKey: ["public-sessions"] });
     },
     onError: (error) => toast(error instanceof Error ? error.message : "No pudimos guardar tu reserva"),
-  });
-
-  const waitlist = useMutation({
-    mutationFn: () =>
-      joinWaitlist({
-        data: {
-          sessionId: waitlistFor!.id,
-          name: `${form.firstName} ${form.lastName}`.trim() || "Invitado",
-          phone: form.phone.trim(),
-          email: form.email.trim(),
-          seats: guests,
-        },
-      }),
-    onSuccess: () => {
-      toast("Te avisaremos si se libera un lugar.");
-      setWaitlistFor(null);
-    },
-    onError: (error) => toast(error instanceof Error ? error.message : "No pudimos guardarte en la lista"),
   });
 
   return (
@@ -130,10 +111,7 @@ export function BookingExperience() {
                 sessions.map((session) => {
                   const full = session.available <= 0;
                   const open = () => {
-                    if (full) {
-                      setWaitlistFor(session);
-                      return;
-                    }
+                    if (full) return;
                     setSelected(session);
                     setGuests(1);
                     setStep(2);
@@ -163,70 +141,19 @@ export function BookingExperience() {
                       </div>
                       <Button
                         className="mt-3 w-full rounded-xl"
+                        disabled={full}
                         onClick={(e) => {
                           e.stopPropagation();
                           open();
                         }}
                       >
-                        {full ? "Lista de espera" : "Reservar"}
+                        {full ? "Agotado" : "Reservar"}
                       </Button>
                     </div>
                   );
                 })
               )}
             </div>
-
-
-            {waitlistFor ? (
-              <div className="card-soft bg-card/85 mt-8 p-5">
-                <p className="text-sm">Esta sesión está completa.</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {relativeDay(waitlistFor.fecha)} · {hour(waitlistFor.hora_inicio)}
-                </p>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  <Field label="Nombre">
-                    <Input
-                      value={form.firstName}
-                      onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                      className="bg-background"
-                    />
-                  </Field>
-                  <div>
-                    <PhoneInput
-                      value={form.phone}
-                      onChange={(phone) => setForm({ ...form, phone })}
-                      placeholder="Número de celular"
-                    />
-                  </div>
-                  <Field label="Email">
-                    <Input
-                      type="email"
-                      value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      className="bg-background"
-                    />
-                  </Field>
-                  <Field label="Lugares">
-                    <Input
-                      type="number"
-                      min={1}
-                      max={8}
-                      value={guests}
-                      onChange={(e) => setGuests(Number(e.target.value))}
-                      className="bg-background"
-                    />
-                  </Field>
-                </div>
-                <div className="mt-5 flex flex-wrap gap-2">
-                  <Button onClick={() => waitlist.mutate()} disabled={waitlist.isPending}>
-                    Unirme a la lista de espera
-                  </Button>
-                  <Button variant="ghost" onClick={() => setWaitlistFor(null)}>
-                    Volver
-                  </Button>
-                </div>
-              </div>
-            ) : null}
           </section>
         ) : null}
 
