@@ -69,6 +69,7 @@ const settingsInput = z.object({
   cancellation_policy: z.string().trim().max(1000).optional().default(""),
   confirmation_text: z.string().trim().max(2000).optional().default(""),
   payment_instructions: z.string().trim().max(4000).optional().default(""),
+  whatsapp_message_template: z.string().trim().max(2000).optional().default(""),
 });
 
 export const saveSettings = createServerFn({ method: "POST" })

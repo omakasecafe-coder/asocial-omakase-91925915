@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { settingsQuery, emailTemplatesQuery, type EmailTemplateRow } from "@/lib/queries";
 import { saveSettings, saveEmailTemplate } from "@/lib/admin.functions";
 import { emailTemplateVariables } from "@/lib/domain";
+import { whatsappTemplateVariables } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/_authenticated/configuracion")({
   component: SettingsPage,
@@ -31,6 +32,7 @@ function SettingsPage() {
     cancellation_policy: "",
     confirmation_text: "",
     payment_instructions: "",
+    whatsapp_message_template: "",
   });
 
   useEffect(() => {
@@ -46,6 +48,7 @@ function SettingsPage() {
       cancellation_policy: data.cancellation_policy ?? "",
       confirmation_text: data.confirmation_text ?? "",
       payment_instructions: data.payment_instructions ?? "",
+      whatsapp_message_template: (data as { whatsapp_message_template?: string }).whatsapp_message_template ?? "",
     });
   }, [data]);
 
@@ -114,6 +117,16 @@ function SettingsPage() {
           />
           <p className="mt-2 text-xs text-muted-foreground">
             Este texto se inserta en los correos con la variable {"{{payment_options}}"}.
+          </p>
+        </Field>
+        <Field label="Mensaje de WhatsApp (reserva pendiente de pago)" className="sm:col-span-2">
+          <Textarea
+            value={form.whatsapp_message_template}
+            onChange={(e) => setForm({ ...form, whatsapp_message_template: e.target.value })}
+            className="min-h-32"
+          />
+          <p className="mt-2 text-xs text-muted-foreground">
+            Se usa en el botón “WhatsApp” de cada reserva. Variables: {whatsappTemplateVariables.join(" ")}
           </p>
         </Field>
         <div className="sm:col-span-2">

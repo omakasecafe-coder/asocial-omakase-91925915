@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { AdminShell } from "@/components/asocial/AdminShell";
@@ -13,10 +13,11 @@ import { PaymentDialog } from "@/components/asocial/PaymentDialog";
 import { EditReservationDialog } from "@/components/asocial/EditReservationDialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { workspaceQuery } from "@/lib/queries";
+import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
 import { setAttendance } from "@/lib/admin.functions";
+import { renderWhatsappMessage, whatsappUrl } from "@/lib/whatsapp";
 import {
   reservationStatusLabel,
   reservationStatusTone,
@@ -39,6 +40,7 @@ export const Route = createFileRoute("/_authenticated/reservas/")({
 function ReservationsPage() {
   const queryClient = useQueryClient();
   const { data: ws } = useQuery(workspaceQuery());
+  const { data: settings } = useQuery(settingsQuery());
   const [q, setQ] = useState("");
   // Por defecto mostramos lo que necesita atención del equipo.
   const [status, setStatus] = useState<string>("pending");
@@ -105,6 +107,24 @@ function ReservationsPage() {
             const paid = paidAmount(ws, r.id);
             const pending = Number(r.total) - paid;
             const att = (r.attendance_status ?? "pending") as AttendanceStatus;
+            const customer = ws.customers.find((c) => c.id === r.customer_id);
+            const waLink = whatsappUrl(
+              customer?.phone,
+              renderWhatsappMessage(
+                (settings as { whatsapp_message_template?: string } | undefined)?.whatsapp_message_template ?? "",
+                {
+                  customer_name: customerName(ws, r.customer_id),
+                  booking_code: r.booking_code,
+                  session_date: s ? longDay(s.fecha) : "",
+                  session_time: s ? hour(s.hora_inicio) : "",
+                  guest_count: String(r.guest_count),
+                  total: money(r.total),
+                  pending_amount: money(Math.max(pending, 0)),
+                  payment_options: settings?.payment_instructions ?? "",
+                  business_name: settings?.business_name ?? "asocial",
+                },
+              ),
+            );
             return (
               <div key={r.id} className="card-soft p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -138,6 +158,14 @@ function ReservationsPage() {
                     {r.reservation_status !== "cancelled" ? (
                       <>
 
+                        {waLink ? (
+                          <Button size="sm" variant="outline" asChild>
+                            <a href={waLink} target="_blank" rel="noopener noreferrer">
+                              <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
+                              WhatsApp
+                            </a>
+                          </Button>
+                        ) : null}
                         {pending > 0 ? (
                           <Button size="sm" variant="outline" onClick={() => setPayFor({ id: r.id, pending })}>
                             Cobrar
