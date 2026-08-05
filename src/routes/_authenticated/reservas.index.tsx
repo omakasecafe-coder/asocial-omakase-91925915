@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
-import { hour, money, longDay } from "@/lib/format";
+import { hour, money, longDay, stamp } from "@/lib/format";
 import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import { markReservationsSeen } from "@/hooks/use-new-reservations";
 import {
