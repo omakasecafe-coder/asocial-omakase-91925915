@@ -101,7 +101,10 @@ function CalendarPage() {
                           key={s.id}
                           to="/sesiones/$id"
                           params={{ id: s.id }}
-                          className="block truncate rounded bg-secondary px-1.5 py-1 text-[11px] transition-colors duration-200 hover:bg-nogal/15"
+                          className={cn(
+                            "block truncate rounded px-1.5 py-1 text-[11px] transition-colors duration-200",
+                            ws && sessionCalendarStyle(ws, s),
+                          )}
                         >
                           {hour(s.hora_inicio)} · {stats.reserved}/{s.capacidad_maxima}
                         </Link>
