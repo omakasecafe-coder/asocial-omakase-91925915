@@ -180,9 +180,6 @@ function ReservationsPage() {
                     <StatusPill tone={paymentStatusTone[r.payment_status as PaymentStatus]}>
                       {paymentStatusLabel[r.payment_status as PaymentStatus]}
                     </StatusPill>
-                    {att !== "pending" ? (
-                      <StatusPill tone={attendanceStatusTone[att]}>{attendanceStatusLabel[att]}</StatusPill>
-                    ) : null}
                     {r.reservation_status !== "cancelled" ? (
                       <>
 
