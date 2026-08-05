@@ -66,12 +66,15 @@ export function ReservationDialog({
 
   // Cada vez que se abre el diálogo empezamos con un formulario limpio,
   // para que no queden pegados los datos de una reserva anterior.
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (!open) return;
-    setCreated(null);
-    setForm({ ...emptyForm, sessionId: defaultSession });
+    if (open && !wasOpen.current) {
+      setCreated(null);
+      setForm({ ...emptyForm, sessionId: defaultSession });
+    }
+    wasOpen.current = open;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, defaultSession]);
+  }, [open]);
 
   const selected = options.find((o) => o.session.id === form.sessionId) ?? null;
   const guests = Number.isFinite(form.guestCount) ? Math.max(Math.trunc(form.guestCount), 0) : 0;
