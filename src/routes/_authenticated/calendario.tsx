@@ -117,6 +117,21 @@ function CalendarPage() {
           );
         })}
       </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
+        <LegendItem color="bg-carbon" label="Completa" />
+        <LegendItem color="bg-musgo" label="Con espacio" />
+        <LegendItem color="bg-secondary" label="Vacía" />
+      </div>
     </AdminShell>
+  );
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn("h-2 w-2 rounded-full", color)} />
+      <span>{label}</span>
+    </div>
   );
 }
