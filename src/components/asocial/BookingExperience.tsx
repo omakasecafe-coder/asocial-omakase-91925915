@@ -68,7 +68,7 @@ export function BookingExperience() {
       className="flex min-h-screen flex-col bg-background bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bgLino.url})` }}
     >
-      <header className="sticky top-0 z-50 px-5 pb-9 pt-8 text-lino md:px-10 md:pb-14 md:pt-12">
+      <header className="sticky top-0 z-50 px-5 pb-6 pt-7 text-lino md:px-10 md:pb-8 md:pt-9">
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
@@ -82,12 +82,9 @@ export function BookingExperience() {
         <div className="mx-auto max-w-2xl">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-11 w-auto drop-shadow-lg md:h-[3.25rem]" />
 
-          <h2 className="mt-6 text-lg font-medium leading-snug text-lino drop-shadow-md md:text-xl">
-            Experiencia Café Omakase
-          </h2>
-          <p className="mt-1.5 max-w-md text-sm leading-relaxed text-lino/80 drop-shadow-md">
+          <h1 className="mt-4 text-lg font-medium leading-snug text-lino drop-shadow-md md:text-xl">
             Una experiencia guiada para descubrir el café con calma.
-          </p>
+          </h1>
         </div>
       </header>
 
