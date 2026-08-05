@@ -17,22 +17,17 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
-import { setAttendance } from "@/lib/admin.functions";
 import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import { markReservationsSeen } from "@/hooks/use-new-reservations";
 import {
   reservationStage,
   reservationStageLabel,
   reservationStageTone,
-
   paymentStatusLabel,
   paymentStatusTone,
-  attendanceStatusLabel,
-  attendanceStatusTone,
   sourceLabel,
   type ReservationStage,
   type PaymentStatus,
-  type AttendanceStatus,
 } from "@/lib/domain";
 
 import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
@@ -59,15 +54,6 @@ function ReservationsPage() {
   useEffect(() => {
     markReservationsSeen();
   }, [ws]);
-
-  const attendance = useMutation({
-    mutationFn: (v: { reservationId: string; status: AttendanceStatus }) => setAttendance({ data: v }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspace"] }),
-    onError: (e) => toast(e instanceof Error ? e.message : "No pudimos registrar la asistencia"),
-  });
-
-
-
 
   const rows = useMemo(() => {
     if (!ws) return [];
@@ -146,7 +132,6 @@ function ReservationsPage() {
             const s = ws.sessions.find((x) => x.id === r.session_id);
             const paid = paidAmount(ws, r.id);
             const pending = Number(r.total) - paid;
-            const att = (r.attendance_status ?? "pending") as AttendanceStatus;
             const customer = ws.customers.find((c) => c.id === r.customer_id);
             const handleWhatsApp = () => {
               openWhatsApp(
@@ -195,9 +180,6 @@ function ReservationsPage() {
                     <StatusPill tone={paymentStatusTone[r.payment_status as PaymentStatus]}>
                       {paymentStatusLabel[r.payment_status as PaymentStatus]}
                     </StatusPill>
-                    {att !== "pending" ? (
-                      <StatusPill tone={attendanceStatusTone[att]}>{attendanceStatusLabel[att]}</StatusPill>
-                    ) : null}
                     {r.reservation_status !== "cancelled" ? (
                       <>
 
@@ -230,46 +212,6 @@ function ReservationsPage() {
                   </div>
                 </div>
 
-                {r.reservation_status !== "cancelled" ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                    <span className="text-xs text-muted-foreground">Asistencia:</span>
-                    <Button
-                      size="sm"
-                      variant={att === "arrived" ? "default" : "outline"}
-                      disabled={attendance.isPending}
-                      onClick={() =>
-                        attendance.mutate({
-                          reservationId: r.id,
-                          status: att === "arrived" ? "pending" : "arrived",
-                        })
-                      }
-                    >
-                      Asistió
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={att === "no_show" ? "default" : "outline"}
-                      disabled={attendance.isPending}
-                      onClick={() =>
-                        attendance.mutate({
-                          reservationId: r.id,
-                          status: att === "no_show" ? "pending" : "no_show",
-                        })
-                      }
-                    >
-                      No-Show
-                    </Button>
-                    {r.attendance_at ? (
-                      <span className="text-xs text-muted-foreground">
-                        Registrado el{" "}
-                        {new Date(r.attendance_at).toLocaleString("es-PE", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
 
                 {r.reservation_status === "cancelled" && r.cancellation_reason ? (
                   <p className="mt-3 text-xs text-muted-foreground">Motivo: {r.cancellation_reason}</p>
