@@ -10,10 +10,12 @@ declare global {
   }
 }
 
-export function gtag(...args: unknown[]) {
+export function gtag() {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(args);
+  // GA requires the raw `arguments` object here, not an array.
+  // eslint-disable-next-line prefer-rest-params
+  window.dataLayer.push(arguments);
 }
 
 let initialized = false;
