@@ -184,6 +184,13 @@ function ReservationsPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {newIds.includes(r.id) ? (
+                      <span
+                        className="h-2.5 w-2.5 rounded-full bg-destructive"
+                        aria-label="Nueva reserva"
+                        title="Nueva reserva"
+                      />
+                    ) : null}
                     <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, s)]}>
                       {reservationStageLabel[reservationStage(r.reservation_status, s)]}
                     </StatusPill>
