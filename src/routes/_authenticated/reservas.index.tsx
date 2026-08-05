@@ -212,46 +212,6 @@ function ReservationsPage() {
                   </div>
                 </div>
 
-                {r.reservation_status !== "cancelled" ? (
-                  <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                    <span className="text-xs text-muted-foreground">Asistencia:</span>
-                    <Button
-                      size="sm"
-                      variant={att === "arrived" ? "default" : "outline"}
-                      disabled={attendance.isPending}
-                      onClick={() =>
-                        attendance.mutate({
-                          reservationId: r.id,
-                          status: att === "arrived" ? "pending" : "arrived",
-                        })
-                      }
-                    >
-                      Asistió
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={att === "no_show" ? "default" : "outline"}
-                      disabled={attendance.isPending}
-                      onClick={() =>
-                        attendance.mutate({
-                          reservationId: r.id,
-                          status: att === "no_show" ? "pending" : "no_show",
-                        })
-                      }
-                    >
-                      No-Show
-                    </Button>
-                    {r.attendance_at ? (
-                      <span className="text-xs text-muted-foreground">
-                        Registrado el{" "}
-                        {new Date(r.attendance_at).toLocaleString("es-PE", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}
-                      </span>
-                    ) : null}
-                  </div>
-                ) : null}
 
                 {r.reservation_status === "cancelled" && r.cancellation_reason ? (
                   <p className="mt-3 text-xs text-muted-foreground">Motivo: {r.cancellation_reason}</p>
