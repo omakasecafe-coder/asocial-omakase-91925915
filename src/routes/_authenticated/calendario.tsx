@@ -8,6 +8,19 @@ import { workspaceQuery } from "@/lib/queries";
 import { sessionStats } from "@/lib/derive";
 import { hour, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { Workspace, SessionRow } from "@/lib/queries";
+
+function sessionCalendarStyle(ws: Workspace, s: SessionRow) {
+  const { reserved, available } = sessionStats(ws, s);
+  if (available <= 0) {
+    return "bg-carbon text-lino hover:bg-carbon/80";
+  }
+  if (reserved === 0) {
+    return "bg-secondary text-muted-foreground hover:bg-nogal/15";
+  }
+  return "bg-musgo/15 text-musgo hover:bg-musgo/25";
+}
+
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   component: CalendarPage,
@@ -88,7 +101,10 @@ function CalendarPage() {
                           key={s.id}
                           to="/sesiones/$id"
                           params={{ id: s.id }}
-                          className="block truncate rounded bg-secondary px-1.5 py-1 text-[11px] transition-colors duration-200 hover:bg-nogal/15"
+                          className={cn(
+                            "block truncate rounded px-1.5 py-1 text-[11px] transition-colors duration-200",
+                            ws && sessionCalendarStyle(ws, s),
+                          )}
                         >
                           {hour(s.hora_inicio)} · {stats.reserved}/{s.capacidad_maxima}
                         </Link>
@@ -101,6 +117,21 @@ function CalendarPage() {
           );
         })}
       </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-4 text-[11px] text-muted-foreground">
+        <LegendItem color="bg-carbon" label="Completa" />
+        <LegendItem color="bg-musgo" label="Con espacio" />
+        <LegendItem color="bg-secondary" label="Vacía" />
+      </div>
     </AdminShell>
+  );
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className={cn("h-2 w-2 rounded-full", color)} />
+      <span>{label}</span>
+    </div>
   );
 }
