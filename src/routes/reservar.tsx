@@ -1,18 +1,46 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { BookingExperience } from "@/components/asocial/BookingExperience";
 
+const title = "Reservar café omakase en Lima | asocial café";
+const description =
+  "Elige una sesión de café omakase en asocial, registra tus datos y recibe los medios de pago para confirmar tu lugar.";
+const url = "https://reservas.asocialcafe.com/reservar";
+const structuredData = {
+  "@context": "https://schema.org",
+  "@type": "WebPage",
+  name: title,
+  url,
+  description,
+  isPartOf: {
+    "@type": "WebSite",
+    name: "asocial café omakase",
+    url: "https://reservas.asocialcafe.com/",
+  },
+  about: {
+    "@type": "FoodEstablishment",
+    name: "asocial café omakase",
+  },
+  potentialAction: {
+    "@type": "ReserveAction",
+    target: url,
+    name: "Reservar una sesión de café omakase",
+  },
+};
+
 export const Route = createFileRoute("/reservar")({
   head: () => ({
     meta: [
-      { title: "Reservar una sesión · asocial café omakase" },
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:url", content: url },
+    ],
+    links: [{ rel: "canonical", href: url }],
+    scripts: [
       {
-        name: "description",
-        content: "Elige el momento, indica cuántos vienen y confirma tu lugar en la barra de asocial.",
-      },
-      { property: "og:title", content: "Reservar una sesión · asocial" },
-      {
-        property: "og:description",
-        content: "Elige el momento, indica cuántos vienen y confirma tu lugar en la barra de asocial.",
+        type: "application/ld+json",
+        children: JSON.stringify(structuredData),
       },
     ],
   }),

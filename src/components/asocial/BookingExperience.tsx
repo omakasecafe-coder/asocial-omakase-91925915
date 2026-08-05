@@ -170,6 +170,34 @@ export function BookingExperience() {
                 })
               )}
             </div>
+
+            <section className="mt-10 border-t border-border/70 pt-8">
+              <h2 className="text-base font-medium">Café omakase en Lima, con ritmo pausado.</h2>
+              <div className="mt-4 space-y-4 text-sm leading-relaxed text-muted-foreground">
+                <p>
+                  asocial café omakase es una experiencia privada de café de especialidad en formato barra guiada.
+                  Cada sesión reúne pocos lugares para explorar métodos, aromas y conversaciones alrededor del café.
+                </p>
+                <p>
+                  La reserva queda registrada con pago por confirmar. Te enviamos los medios disponibles por correo y,
+                  cuando validamos tu comprobante por WhatsApp o email, recibes la confirmación final de tu sesión.
+                </p>
+              </div>
+              <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
+                <div>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Formato</dt>
+                  <dd className="mt-1 text-foreground">Experiencia guiada</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Cupos</dt>
+                  <dd className="mt-1 text-foreground">Limitados por sesión</dd>
+                </div>
+                <div>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Reserva</dt>
+                  <dd className="mt-1 text-foreground">Pago por confirmar</dd>
+                </div>
+              </dl>
+            </section>
           </section>
         ) : null}
 

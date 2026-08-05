@@ -19,6 +19,11 @@ import { onConsentChange } from "@/lib/cookie-consent";
 
 import { supabase } from "@/integrations/supabase/client";
 
+const siteUrl = "https://reservas.asocialcafe.com";
+const siteTitle = "asocial café omakase — reservas";
+const siteDescription =
+  "Reserva una experiencia privada de café omakase en asocial: una barra guiada, cupos limitados y un ritmo pausado para descubrir el café con calma.";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -84,20 +89,25 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "asocial · café omakase — Reserva tu sesión" },
+      { title: siteTitle },
       {
         name: "description",
-        content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada.",
+        content: siteDescription,
       },
       { name: "author", content: "asocial" },
+      { name: "robots", content: "index, follow" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "asocial · café omakase — Reserva tu sesión" },
-      { name: "twitter:title", content: "asocial · café omakase — Reserva tu sesión" },
-      { property: "og:description", content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada." },
-      { name: "twitter:description", content: "Reserva una sesión privada de café omakase en asocial: pocas plazas, ritmo pausado y una barra guiada." },
+      { property: "og:site_name", content: "asocial café omakase" },
+      { property: "og:url", content: siteUrl },
+      { property: "og:title", content: siteTitle },
+      { property: "og:description", content: siteDescription },
+      { property: "og:locale", content: "es_PE" },
+      { name: "twitter:card", content: "summary" },
+      { name: "twitter:title", content: siteTitle },
+      { name: "twitter:description", content: siteDescription },
     ],
     links: [
+      { rel: "canonical", href: siteUrl },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
