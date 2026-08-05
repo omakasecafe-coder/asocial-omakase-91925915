@@ -16,7 +16,9 @@ import bgCarbon from "@/assets/background-carbon.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+
 
 type Step = 1 | 2 | 3 | 4;
 
