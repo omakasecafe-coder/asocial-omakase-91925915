@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -278,30 +279,19 @@ export function BookingExperience() {
         {step === 4 && confirmation && selected ? (
           <section className="animate-in fade-in duration-200">
             <h1 className="text-xl font-medium">Tu lugar está reservado</h1>
-            <p className="mt-3 text-sm text-muted-foreground">Código {confirmation.code}</p>
             <div className="card-soft mt-6 divide-y divide-border">
+              <Row label="Código" value={confirmation.code} strong />
               <Row label="Fecha" value={longDay(selected.fecha)} />
               <Row label="Hora" value={hour(selected.hora_inicio)} />
               <Row label="Personas" value={String(guests)} />
               <Row label="Total" value={money(confirmation.total)} />
-              <Row label="Estado de pago" value="Pago por confirmar" />
+              <Row label="Estado de pago" value="Pago por confirmar" strong />
             </div>
-            <p className="mt-6 text-sm leading-relaxed text-muted-foreground">
+            <p className="mt-6 flex items-start gap-2 text-sm font-semibold leading-relaxed text-foreground">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               Te enviamos un correo con el resumen y los medios de pago. Envíanos el comprobante por WhatsApp y tu
               reserva quedará confirmada.
             </p>
-
-            <Button
-              variant="ghost"
-              className="mt-8 px-0"
-              onClick={() => {
-                setStep(1);
-                setSelected(null);
-                setConfirmation(null);
-              }}
-            >
-              Reservar otro momento
-            </Button>
           </section>
         ) : null}
       </main>
