@@ -1,3 +1,5 @@
+import { readConsent } from "@/lib/cookie-consent";
+
 const measurementId = import.meta.env['VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_API_KEY'] as
   | string
   | undefined;
@@ -16,8 +18,12 @@ export function gtag(...args: unknown[]) {
 
 let initialized = false;
 
+function allowed() {
+  return Boolean(measurementId) && readConsent() === "granted";
+}
+
 export function initAnalytics() {
-  if (typeof window === "undefined" || initialized || !measurementId) return;
+  if (typeof window === "undefined" || initialized || !allowed()) return;
   initialized = true;
 
   const script = document.createElement("script");
@@ -30,11 +36,14 @@ export function initAnalytics() {
 }
 
 export function trackPageView(path: string) {
-  if (!measurementId) return;
+  if (!allowed()) return;
+  initAnalytics();
   gtag("event", "page_view", { page_path: path, page_location: window.location.href });
 }
 
 export function trackEvent(name: string, params: Record<string, unknown> = {}) {
-  if (!measurementId) return;
+  if (!allowed()) return;
+  initAnalytics();
   gtag("event", name, params);
 }
+
