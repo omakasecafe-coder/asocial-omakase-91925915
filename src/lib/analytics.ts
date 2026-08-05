@@ -10,10 +10,16 @@ declare global {
   }
 }
 
+function toArguments(args: unknown[]): IArguments {
+  // eslint-disable-next-line prefer-rest-params
+  return (function () { return arguments; } as (...a: unknown[]) => IArguments)(...args);
+}
+
 export function gtag(...args: unknown[]) {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push(args);
+  // GA requires the raw `arguments` object here, not an array.
+  window.dataLayer.push(toArguments(args));
 }
 
 let initialized = false;
