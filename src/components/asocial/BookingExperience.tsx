@@ -61,9 +61,19 @@ export function BookingExperience() {
     onSuccess: (result) => {
       setConfirmation({ code: result.bookingCode, total: result.total });
       setStep(4);
+      trackEvent("purchase", {
+        transaction_id: result.bookingCode,
+        value: result.total,
+        currency: "PEN",
+        items: selected ? [{ item_id: selected.id, item_name: longDay(selected.fecha), quantity: guests }] : [],
+      });
       queryClient.invalidateQueries({ queryKey: ["public-sessions"] });
     },
-    onError: (error) => toast(error instanceof Error ? error.message : "No pudimos guardar tu reserva"),
+    onError: (error) => {
+      trackEvent("reservation_error", { message: error instanceof Error ? error.message : "unknown" });
+      toast(error instanceof Error ? error.message : "No pudimos guardar tu reserva");
+    },
+
   });
 
   return (
