@@ -106,7 +106,7 @@ export function BookingExperience() {
 
         {step === 1 ? (
           <section>
-            <h1 className="text-lg font-medium">Próximas experiencias</h1>
+            <h1 className="text-lg font-medium">Reserva tu sesión de café omakase</h1>
             <p className="mt-1 text-sm text-muted-foreground">Elige el horario que prefieras.</p>
 
             <div className="mt-6 space-y-3">
