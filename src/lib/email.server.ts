@@ -38,7 +38,7 @@ function paragraphs(text: string) {
     .filter((block) => block.trim().length > 0)
     .map(
       (block) =>
-        `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#2c2621;">${escapeHtml(
+        `<p style="margin:0 0 16px;font-size:16px;line-height:1.7;color:#2c2621;font-family:Helvetica,Arial,sans-serif;">${escapeHtml(
           block.trim(),
         ).replace(/\n/g, "<br />")}</p>`,
     )
@@ -59,38 +59,62 @@ export function renderTemplate(template: TemplateRow, vars: EmailVars) {
 
   const text = [title, body, extra, signature, `${businessName} — ${SITE_URL}`].filter(Boolean).join("\n\n");
 
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>${escapeHtml(
-    subject,
-  )}</title></head><body style="margin:0;padding:0;background-color:#efe9e0;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(title)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#efe9e0;padding:24px 12px;">
-    <tr><td align="center">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background-color:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6ddd2;font-family:Helvetica,Arial,sans-serif;">
+  const html = `<!doctype html>
+<html lang="es" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="x-apple-disable-message-reformatting" />
+<meta name="format-detection" content="telephone=no,address=no,email=no,date=no" />
+<meta name="color-scheme" content="light only" />
+<meta name="supported-color-schemes" content="light only" />
+<title>${escapeHtml(subject)}</title>
+<!--[if mso]><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml><![endif]-->
+<style type="text/css">
+  html,body{margin:0 !important;padding:0 !important;width:100% !important;}
+  body{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;}
+  table{border-collapse:collapse !important;mso-table-lspace:0pt;mso-table-rspace:0pt;}
+  img{border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic;}
+  a{color:#5a6b4d;}
+  @media only screen and (max-width:600px){
+    .wrap{padding:12px 8px !important;}
+    .card{border-radius:12px !important;}
+    .px{padding-left:20px !important;padding-right:20px !important;}
+    .hd{padding:22px 20px !important;}
+    .h1{font-size:19px !important;}
+  }
+</style>
+</head>
+<body style="margin:0;padding:0;width:100%;background-color:#efe9e0;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all;">${escapeHtml(title)}</div>
+  <table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#efe9e0;">
+    <tr><td align="center" class="wrap" style="padding:24px 12px;">
+      <table role="presentation" width="560" border="0" cellpadding="0" cellspacing="0" class="card" style="width:100%;max-width:560px;background-color:#ffffff;border-radius:16px;border:1px solid #e6ddd2;font-family:Helvetica,Arial,sans-serif;">
         <tr>
-          <td align="center" style="background-color:#1c1815;padding:28px 24px;">
-            <img src="${LOGO_URL}" alt="${escapeHtml(businessName)}" width="132" style="display:block;width:132px;max-width:60%;height:auto;margin:0 auto;" />
+          <td align="center" class="hd" style="background-color:#1c1815;padding:28px 24px;border-radius:16px 16px 0 0;">
+            <img src="${LOGO_URL}" alt="${escapeHtml(businessName)}" width="132" style="display:block;width:132px;max-width:60%;height:auto;margin:0 auto;border:0;" />
           </td>
         </tr>
         <tr>
-          <td style="padding:32px 28px 8px;">
-            <h1 style="margin:0 0 20px;font-size:20px;font-weight:600;color:#1c1815;letter-spacing:-0.01em;">${escapeHtml(
+          <td class="px" style="padding:32px 28px 8px;">
+            <h1 class="h1" style="margin:0 0 20px;font-size:20px;line-height:1.35;font-weight:600;color:#1c1815;letter-spacing:-0.01em;font-family:Helvetica,Arial,sans-serif;">${escapeHtml(
               title,
             )}</h1>
             ${paragraphs(body)}
-            ${extra ? `<div style="margin:24px 0;padding:16px;background-color:#f6f2ec;border-radius:10px;">${paragraphs(extra)}</div>` : ""}
-            ${signature ? `<div style="margin-top:24px;border-top:1px solid #e6ddd2;padding-top:16px;">${paragraphs(signature)}</div>` : ""}
+            ${extra ? `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin:24px 0;background-color:#f6f2ec;border-radius:10px;"><tr><td style="padding:16px;">${paragraphs(extra)}</td></tr></table>` : ""}
+            ${signature ? `<table role="presentation" width="100%" border="0" cellpadding="0" cellspacing="0" style="margin-top:24px;border-top:1px solid #e6ddd2;"><tr><td style="padding-top:16px;">${paragraphs(signature)}</td></tr></table>` : ""}
           </td>
         </tr>
         <tr>
-          <td style="background-color:#f6f2ec;border-top:1px solid #e6ddd2;padding:24px 28px;">
-            <p style="margin:0 0 6px;font-size:13px;font-weight:600;color:#1c1815;">${escapeHtml(businessName)}</p>
-            <p style="margin:0 0 10px;font-size:12px;line-height:1.6;color:#6b6055;">Una experiencia guiada para descubrir el café con calma.</p>
-            <p style="margin:0 0 10px;font-size:12px;line-height:1.6;color:#6b6055;">
-              <a href="${SITE_URL}" style="color:#5a6b4d;text-decoration:none;">reservas.asocialcafe.com</a>
-              &nbsp;·&nbsp;
-              <a href="mailto:reservas@asocialcafe.com" style="color:#5a6b4d;text-decoration:none;">reservas@asocialcafe.com</a>
+          <td class="px" style="background-color:#f6f2ec;border-top:1px solid #e6ddd2;padding:24px 28px;border-radius:0 0 16px 16px;">
+            <p style="margin:0 0 6px;font-size:14px;line-height:1.5;font-weight:600;color:#1c1815;font-family:Helvetica,Arial,sans-serif;">${escapeHtml(businessName)}</p>
+            <p style="margin:0 0 10px;font-size:13px;line-height:1.6;color:#6b6055;font-family:Helvetica,Arial,sans-serif;">Una experiencia guiada para descubrir el café con calma.</p>
+            <p style="margin:0 0 10px;font-size:13px;line-height:1.8;color:#6b6055;font-family:Helvetica,Arial,sans-serif;">
+              <a href="${SITE_URL}" style="color:#5a6b4d;text-decoration:none;white-space:nowrap;">reservas.asocialcafe.com</a>
+              <br />
+              <a href="mailto:reservas@asocialcafe.com" style="color:#5a6b4d;text-decoration:none;white-space:nowrap;">reservas@asocialcafe.com</a>
             </p>
-            <p style="margin:0;font-size:11px;line-height:1.6;color:#9a8f83;">© ${year} ${escapeHtml(
+            <p style="margin:0;font-size:12px;line-height:1.6;color:#9a8f83;font-family:Helvetica,Arial,sans-serif;">© ${year} ${escapeHtml(
               businessName,
             )}. Este correo se envía por tu reserva; no es publicidad.</p>
           </td>
@@ -98,7 +122,8 @@ export function renderTemplate(template: TemplateRow, vars: EmailVars) {
       </table>
     </td></tr>
   </table>
-  </body></html>`;
+</body></html>`;
+
 
   return { subject, html, text };
 }
