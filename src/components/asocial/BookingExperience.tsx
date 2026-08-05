@@ -259,6 +259,7 @@ export function BookingExperience() {
                     toast("Necesitamos tu nombre, WhatsApp y email.");
                     return;
                   }
+                  trackEvent("begin_checkout", { guests, value: total, currency: "PEN" });
                   setStep(3);
                 }}
               >
