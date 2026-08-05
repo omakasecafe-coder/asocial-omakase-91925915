@@ -8,6 +8,19 @@ import { workspaceQuery } from "@/lib/queries";
 import { sessionStats } from "@/lib/derive";
 import { hour, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { Workspace, SessionRow } from "@/lib/queries";
+
+function sessionCalendarStyle(ws: Workspace, s: SessionRow) {
+  const { reserved, available } = sessionStats(ws, s);
+  if (available <= 0) {
+    return "bg-carbon text-lino hover:bg-carbon/80";
+  }
+  if (reserved === 0) {
+    return "bg-secondary text-muted-foreground hover:bg-nogal/15";
+  }
+  return "bg-musgo/15 text-musgo hover:bg-musgo/25";
+}
+
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   component: CalendarPage,
