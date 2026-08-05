@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -49,7 +49,7 @@ export function ReservationDialog({
   const defaultSession =
     sessionId ?? options.find((o) => o.available > 0)?.session.id ?? options[0]?.session.id ?? "";
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     sessionId: defaultSession,
     customerId: "",
     firstName: "",
@@ -60,7 +60,21 @@ export function ReservationDialog({
     reservationStatus: "confirmed" as ReservationStatus,
     paymentStatus: "pending" as PaymentStatus,
     notes: "",
-  });
+  };
+
+  const [form, setForm] = useState(emptyForm);
+
+  // Cada vez que se abre el diálogo empezamos con un formulario limpio,
+  // para que no queden pegados los datos de una reserva anterior.
+  const wasOpen = useRef(false);
+  useEffect(() => {
+    if (open && !wasOpen.current) {
+      setCreated(null);
+      setForm({ ...emptyForm, sessionId: defaultSession });
+    }
+    wasOpen.current = open;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const selected = options.find((o) => o.session.id === form.sessionId) ?? null;
   const guests = Number.isFinite(form.guestCount) ? Math.max(Math.trunc(form.guestCount), 0) : 0;
@@ -98,6 +112,7 @@ export function ReservationDialog({
 
   function close() {
     setCreated(null);
+    setForm({ ...emptyForm, sessionId: defaultSession });
     onOpenChange(false);
   }
 
