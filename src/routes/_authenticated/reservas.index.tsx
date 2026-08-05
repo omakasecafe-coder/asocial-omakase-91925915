@@ -49,9 +49,17 @@ function ReservationsPage() {
   const [moving, setMoving] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
+  const [newIds, setNewIds] = useState<string[]>([]);
 
   // Al abrir la pantalla, las reservas dejan de ser "nuevas".
   useEffect(() => {
+    if (!ws) return;
+    const seenAt = readSeenAt();
+    setNewIds(
+      ws.reservations
+        .filter((r) => r.reservation_status !== "cancelled" && Date.parse(r.created_at) > seenAt)
+        .map((r) => r.id),
+    );
     markReservationsSeen();
   }, [ws]);
 
