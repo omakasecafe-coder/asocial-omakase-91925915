@@ -49,7 +49,7 @@ export function ReservationDialog({
   const defaultSession =
     sessionId ?? options.find((o) => o.available > 0)?.session.id ?? options[0]?.session.id ?? "";
 
-  const [form, setForm] = useState({
+  const emptyForm = {
     sessionId: defaultSession,
     customerId: "",
     firstName: "",
@@ -60,7 +60,18 @@ export function ReservationDialog({
     reservationStatus: "confirmed" as ReservationStatus,
     paymentStatus: "pending" as PaymentStatus,
     notes: "",
-  });
+  };
+
+  const [form, setForm] = useState(emptyForm);
+
+  // Cada vez que se abre el diálogo empezamos con un formulario limpio,
+  // para que no queden pegados los datos de una reserva anterior.
+  useEffect(() => {
+    if (!open) return;
+    setCreated(null);
+    setForm({ ...emptyForm, sessionId: defaultSession });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, defaultSession]);
 
   const selected = options.find((o) => o.session.id === form.sessionId) ?? null;
   const guests = Number.isFinite(form.guestCount) ? Math.max(Math.trunc(form.guestCount), 0) : 0;
