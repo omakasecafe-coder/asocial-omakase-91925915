@@ -23,6 +23,19 @@ const siteUrl = "https://reservas.asocialcafe.com";
 const siteTitle = "asocial café omakase — reservas";
 const siteDescription =
   "Reserva una experiencia privada de café omakase en asocial: una barra guiada, cupos limitados y un ritmo pausado para descubrir el café con calma.";
+const metaPixelId = "1687497742354743";
+const metaPixelCode = `
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '${metaPixelId}');
+fbq('track', 'PageView');
+`;
 
 function NotFoundComponent() {
   return (
@@ -132,8 +145,18 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="es">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: metaPixelCode }} />
       </head>
       <body>
+        <noscript>
+          <img
+            alt=""
+            height="1"
+            width="1"
+            style={{ display: "none" }}
+            src={`https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1`}
+          />
+        </noscript>
         {children}
         <Scripts />
       </body>
