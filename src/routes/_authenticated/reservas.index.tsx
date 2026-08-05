@@ -132,7 +132,6 @@ function ReservationsPage() {
             const s = ws.sessions.find((x) => x.id === r.session_id);
             const paid = paidAmount(ws, r.id);
             const pending = Number(r.total) - paid;
-            const att = (r.attendance_status ?? "pending") as AttendanceStatus;
             const customer = ws.customers.find((c) => c.id === r.customer_id);
             const handleWhatsApp = () => {
               openWhatsApp(
