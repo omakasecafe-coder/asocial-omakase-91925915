@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
   Coffee,
@@ -20,27 +20,33 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { useNewReservationsCount } from "@/hooks/use-new-reservations";
+import { myAccessQuery } from "@/lib/queries";
+import { canAccessModule } from "@/lib/modules";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 
 const nav = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/calendario", label: "Calendario", icon: CalendarDays },
-  { to: "/sesiones", label: "Sesiones", icon: Coffee },
-  { to: "/reservas", label: "Reservas", icon: Ticket },
-  { to: "/clientes", label: "Clientes", icon: Users },
-  { to: "/pagos", label: "Pagos", icon: CreditCard },
-  { to: "/reportes", label: "Reportes", icon: LineChart },
-  { to: "/usuarios", label: "Usuarios", icon: UserCog },
-  { to: "/configuracion", label: "Configuración", icon: SettingsIcon },
-  { to: "/probar-correo", label: "Probar correo", icon: Mail },
+  { to: "/dashboard", key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/calendario", key: "calendario", label: "Calendario", icon: CalendarDays },
+  { to: "/sesiones", key: "sesiones", label: "Sesiones", icon: Coffee },
+  { to: "/reservas", key: "reservas", label: "Reservas", icon: Ticket },
+  { to: "/clientes", key: "clientes", label: "Clientes", icon: Users },
+  { to: "/pagos", key: "pagos", label: "Pagos", icon: CreditCard },
+  { to: "/reportes", key: "reportes", label: "Reportes", icon: LineChart },
+  { to: "/usuarios", key: "usuarios", label: "Usuarios", icon: UserCog },
+  { to: "/configuracion", key: "configuracion", label: "Configuración", icon: SettingsIcon },
+  { to: "/probar-correo", key: "probar-correo", label: "Probar correo", icon: Mail },
 ] as const;
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const newReservations = useNewReservationsCount();
+  const { data: access } = useQuery(myAccessQuery());
+  const visible = nav.filter((item) =>
+    canAccessModule(access?.modules, access?.isAdmin ?? false, item.key),
+  );
   return (
     <nav className="flex flex-col gap-0.5">
-      {nav.map((item) => {
+      {visible.map((item) => {
         const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
         return (
           <Link

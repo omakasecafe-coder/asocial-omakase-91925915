@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getWorkspace, getSettings, getEmailTemplates, listStaffUsers } from "@/lib/admin.functions";
+import { getWorkspace, getSettings, getEmailTemplates, listStaffUsers, getMyAccess } from "@/lib/admin.functions";
 import { getPublicSessions } from "@/lib/public.functions";
 
 export const workspaceQuery = () =>
@@ -30,6 +30,13 @@ export const staffUsersQuery = () =>
   queryOptions({
     queryKey: ["staff-users"],
     queryFn: () => listStaffUsers(),
+  });
+
+export const myAccessQuery = () =>
+  queryOptions({
+    queryKey: ["my-access"],
+    queryFn: () => getMyAccess(),
+    staleTime: 60_000,
   });
 
 export type Workspace = Awaited<ReturnType<typeof getWorkspace>>;
