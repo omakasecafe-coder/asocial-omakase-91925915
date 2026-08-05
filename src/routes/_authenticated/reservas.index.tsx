@@ -55,15 +55,6 @@ function ReservationsPage() {
     markReservationsSeen();
   }, [ws]);
 
-  const attendance = useMutation({
-    mutationFn: (v: { reservationId: string; status: AttendanceStatus }) => setAttendance({ data: v }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["workspace"] }),
-    onError: (e) => toast(e instanceof Error ? e.message : "No pudimos registrar la asistencia"),
-  });
-
-
-
-
   const rows = useMemo(() => {
     if (!ws) return [];
     const term = q.trim().toLowerCase();
