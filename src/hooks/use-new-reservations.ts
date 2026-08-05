@@ -5,7 +5,7 @@ import { workspaceQuery } from "@/lib/queries";
 const KEY = "asocial:reservas-vistas-at";
 const EVENT = "asocial:reservas-vistas";
 
-function readSeenAt(): number {
+export function readSeenAt(): number {
   if (typeof window === "undefined") return Date.now();
   const raw = window.localStorage.getItem(KEY);
   const value = raw ? Date.parse(raw) : NaN;
