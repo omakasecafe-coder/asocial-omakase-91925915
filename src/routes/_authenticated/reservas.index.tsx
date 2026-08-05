@@ -17,22 +17,17 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay } from "@/lib/format";
-import { setAttendance } from "@/lib/admin.functions";
 import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
 import { markReservationsSeen } from "@/hooks/use-new-reservations";
 import {
   reservationStage,
   reservationStageLabel,
   reservationStageTone,
-
   paymentStatusLabel,
   paymentStatusTone,
-  attendanceStatusLabel,
-  attendanceStatusTone,
   sourceLabel,
   type ReservationStage,
   type PaymentStatus,
-  type AttendanceStatus,
 } from "@/lib/domain";
 
 import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
