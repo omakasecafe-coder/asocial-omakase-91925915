@@ -185,7 +185,7 @@ export function BookingExperience() {
                 </div>
               </Field>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4">
                 <Field label="Nombre">
                   <Input
                     value={form.firstName}
@@ -200,13 +200,6 @@ export function BookingExperience() {
                     className="bg-card"
                   />
                 </Field>
-                <div>
-                  <PhoneInput
-                    value={form.phone}
-                    onChange={(phone) => setForm({ ...form, phone })}
-                    placeholder="Número de celular"
-                  />
-                </div>
                 <Field label="Email">
                   <Input
                     type="email"
@@ -215,6 +208,13 @@ export function BookingExperience() {
                     className="bg-card"
                   />
                 </Field>
+                <div>
+                  <PhoneInput
+                    value={form.phone}
+                    onChange={(phone) => setForm({ ...form, phone })}
+                    placeholder="Número de celular"
+                  />
+                </div>
               </div>
 
               <Field label="Alergias o restricciones (opcional)">
