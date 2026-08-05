@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { staffUsersQuery } from "@/lib/queries";
 import { createStaffUser, updateStaffUser } from "@/lib/admin.functions";
 import { appRoleLabel, type AppRole } from "@/lib/domain";
+import { APP_MODULES } from "@/lib/modules";
 
 export const Route = createFileRoute("/_authenticated/usuarios")({
   component: UsersPage,
@@ -28,6 +29,7 @@ type StaffUser = {
   full_name: string | null;
   active: boolean;
   role: string;
+  modules: string[] | null;
 };
 
 function UsersPage() {
@@ -90,7 +92,13 @@ function UsersPage() {
 
 function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const queryClient = useQueryClient();
-  const [form, setForm] = useState({ email: "", password: "", fullName: "", role: "operator" as AppRole });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    fullName: "",
+    role: "operator" as AppRole,
+    modules: APP_MODULES.map((m) => m.key) as string[],
+  });
 
   const create = useMutation({
     mutationFn: () => createStaffUser({ data: form }),
@@ -154,6 +162,11 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
               </Select>
             </div>
           </div>
+          <ModulesField
+            value={form.modules}
+            onChange={(modules) => setForm({ ...form, modules })}
+            disabled={form.role === "admin"}
+          />
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
@@ -182,6 +195,9 @@ function EditUserDialog({
     fullName: user.full_name ?? "",
     role: (user.role as AppRole) ?? "operator",
     active: user.active,
+    modules: (user.modules && user.modules.length > 0
+      ? user.modules
+      : APP_MODULES.map((m) => m.key)) as string[],
     password: "",
   });
 
@@ -227,6 +243,11 @@ function EditUserDialog({
               </Select>
             </div>
           </div>
+          <ModulesField
+            value={form.modules}
+            onChange={(modules) => setForm({ ...form, modules })}
+            disabled={form.role === "admin"}
+          />
           <div className="flex items-center justify-between rounded-lg border border-border px-4 py-3">
             <div>
               <p className="text-sm">Acceso activo</p>
@@ -257,5 +278,41 @@ function EditUserDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function ModulesField({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string[];
+  onChange: (modules: string[]) => void;
+  disabled?: boolean;
+}) {
+  function toggle(key: string, on: boolean) {
+    onChange(on ? [...new Set([...value, key])] : value.filter((k) => k !== key));
+  }
+  return (
+    <div className="rounded-lg border border-border p-4">
+      <p className="text-sm">Módulos habilitados</p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {disabled
+          ? "Los administradores acceden a todos los módulos."
+          : "Activa o desactiva el acceso a cada sección del panel."}
+      </p>
+      <div className="mt-3 space-y-2">
+        {APP_MODULES.map((m) => (
+          <div key={m.key} className="flex items-center justify-between gap-3">
+            <span className="text-sm text-muted-foreground">{m.label}</span>
+            <Switch
+              checked={disabled || value.includes(m.key)}
+              disabled={disabled}
+              onCheckedChange={(on) => toggle(m.key, on)}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

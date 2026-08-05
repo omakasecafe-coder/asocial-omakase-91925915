@@ -98,6 +98,12 @@ export function AdminShell({
 }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (st) => st.location.pathname });
+  const { data: access } = useQuery(myAccessQuery());
+  const current = nav.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+  const blocked = Boolean(
+    access && current && !canAccessModule(access.modules, access.isAdmin, current.key),
+  );
   const queryClient = useQueryClient();
 
   async function signOut() {
@@ -154,7 +160,15 @@ export function AdminShell({
           {actions}
         </header>
 
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">{children}</main>
+        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          {blocked ? (
+            <p className="rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
+              No tienes acceso a este módulo. Pide a un administrador que lo habilite.
+            </p>
+          ) : (
+            children
+          )}
+        </main>
       </div>
     </div>
   );
