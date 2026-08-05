@@ -18,7 +18,7 @@ import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay, stamp } from "@/lib/format";
 import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
-import { markReservationsSeen } from "@/hooks/use-new-reservations";
+import { markReservationsSeen, readSeenAt } from "@/hooks/use-new-reservations";
 import {
   reservationStage,
   reservationStageLabel,
@@ -49,9 +49,17 @@ function ReservationsPage() {
   const [moving, setMoving] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
+  const [newIds, setNewIds] = useState<string[]>([]);
 
   // Al abrir la pantalla, las reservas dejan de ser "nuevas".
   useEffect(() => {
+    if (!ws) return;
+    const seenAt = readSeenAt();
+    setNewIds(
+      ws.reservations
+        .filter((r) => r.reservation_status !== "cancelled" && Date.parse(r.created_at) > seenAt)
+        .map((r) => r.id),
+    );
     markReservationsSeen();
   }, [ws]);
 
@@ -176,6 +184,13 @@ function ReservationsPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {newIds.includes(r.id) ? (
+                      <span
+                        className="h-2.5 w-2.5 rounded-full bg-destructive"
+                        aria-label="Nueva reserva"
+                        title="Nueva reserva"
+                      />
+                    ) : null}
                     <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, s)]}>
                       {reservationStageLabel[reservationStage(r.reservation_status, s)]}
                     </StatusPill>
