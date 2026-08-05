@@ -499,6 +499,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          modules: string[] | null
           updated_at: string
           user_id: string
         }
@@ -508,6 +509,7 @@ export type Database = {
           email: string
           full_name?: string
           id?: string
+          modules?: string[] | null
           updated_at?: string
           user_id: string
         }
@@ -517,6 +519,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          modules?: string[] | null
           updated_at?: string
           user_id?: string
         }
