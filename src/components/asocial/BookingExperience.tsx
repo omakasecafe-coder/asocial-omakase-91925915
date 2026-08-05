@@ -82,7 +82,7 @@ export function BookingExperience() {
         <div className="mx-auto max-w-2xl">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-11 w-auto drop-shadow-lg md:h-[3.25rem]" />
 
-          <h1 className="mt-4 text-lg font-medium leading-snug text-lino drop-shadow-md md:text-xl">
+          <h1 className="mt-4 text-sm font-medium leading-snug text-lino drop-shadow-md md:text-base">
             Una experiencia guiada para descubrir el café con calma.
           </h1>
         </div>
@@ -162,20 +162,26 @@ export function BookingExperience() {
             <div className="mt-8 space-y-4">
               <Field label="Número de personas">
                 <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: Math.min(selected.available, 6) }, (_, i) => i + 1).map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setGuests(n)}
-                      className={cn(
-                        "h-10 w-10 rounded-full border text-sm transition-colors duration-200",
-                        guests === n
-                          ? "border-carbon bg-carbon text-lino"
-                          : "border-border text-foreground hover:border-nogal/40",
-                      )}
-                    >
-                      {n}
-                    </button>
-                  ))}
+                  {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => {
+                    const disabled = n > selected.available;
+                    return (
+                      <button
+                        key={n}
+                        disabled={disabled}
+                        onClick={() => setGuests(n)}
+                        className={cn(
+                          "h-10 w-10 rounded-full border text-sm transition-colors duration-200",
+                          disabled
+                            ? "cursor-not-allowed border-border/50 text-muted-foreground/40"
+                            : guests === n
+                              ? "border-carbon bg-carbon text-lino"
+                              : "border-border text-foreground hover:border-nogal/40",
+                        )}
+                      >
+                        {n}
+                      </button>
+                    );
+                  })}
                 </div>
               </Field>
 
