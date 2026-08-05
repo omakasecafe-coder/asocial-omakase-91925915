@@ -53,6 +53,24 @@ export function seatsLabel(n: number) {
   return n === 1 ? "1 lugar" : `${n} lugares`;
 }
 
+/** Fecha y hora de un timestamp ISO, en horario de Lima. */
+export function stamp(iso: string | null | undefined) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d
+    .toLocaleString("es-PE", {
+      timeZone: "America/Lima",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .replace(",", " ·");
+}
+
 export function initials(first: string, last: string) {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase();
 }
