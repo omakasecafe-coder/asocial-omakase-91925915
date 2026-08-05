@@ -112,6 +112,7 @@ export function ReservationDialog({
 
   function close() {
     setCreated(null);
+    setForm({ ...emptyForm, sessionId: defaultSession });
     onOpenChange(false);
   }
 
