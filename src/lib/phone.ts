@@ -22,6 +22,16 @@ export const COUNTRIES: Country[] = [
 
 export const DEFAULT_DIAL = "+51";
 
+/** Emoji flag from an ISO country code (e.g. "PE" -> 🇵🇪). */
+export function flagEmoji(code: string) {
+  return code
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "")
+    .split("")
+    .map((c) => String.fromCodePoint(127397 + c.charCodeAt(0)))
+    .join("");
+}
+
 /** Digits only, no leading zeros. */
 function digits(value: string) {
   return value.replace(/\D+/g, "").replace(/^0+/, "");

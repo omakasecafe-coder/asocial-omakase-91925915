@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { COUNTRIES, DEFAULT_DIAL, splitPhone, toE164 } from "@/lib/phone";
+import { COUNTRIES, DEFAULT_DIAL, flagEmoji, splitPhone, toE164 } from "@/lib/phone";
 
 /**
  * Country selector + local number. Emits an E.164 string (e.g. +51987654321).
@@ -29,7 +29,8 @@ export function PhoneInput({
         <SelectContent>
           {COUNTRIES.map((c) => (
             <SelectItem key={c.code} value={c.dial}>
-              {c.dial} {c.code}
+              <span className="mr-1">{flagEmoji(c.code)}</span>
+              {c.dial}
             </SelectItem>
           ))}
         </SelectContent>
