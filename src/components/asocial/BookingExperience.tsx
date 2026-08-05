@@ -16,7 +16,9 @@ import bgCarbon from "@/assets/background-carbon.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+
 
 type Step = 1 | 2 | 3 | 4;
 
@@ -59,9 +61,19 @@ export function BookingExperience() {
     onSuccess: (result) => {
       setConfirmation({ code: result.bookingCode, total: result.total });
       setStep(4);
+      trackEvent("purchase", {
+        transaction_id: result.bookingCode,
+        value: result.total,
+        currency: "PEN",
+        items: selected ? [{ item_id: selected.id, item_name: longDay(selected.fecha), quantity: guests }] : [],
+      });
       queryClient.invalidateQueries({ queryKey: ["public-sessions"] });
     },
-    onError: (error) => toast(error instanceof Error ? error.message : "No pudimos guardar tu reserva"),
+    onError: (error) => {
+      trackEvent("reservation_error", { message: error instanceof Error ? error.message : "unknown" });
+      toast(error instanceof Error ? error.message : "No pudimos guardar tu reserva");
+    },
+
   });
 
   return (
@@ -113,7 +125,13 @@ export function BookingExperience() {
                     setSelected(session);
                     setGuests(1);
                     setStep(2);
+                    trackEvent("select_session", {
+                      session_id: session.id,
+                      session_date: session.fecha,
+                      session_time: session.hora_inicio,
+                    });
                   };
+
                   return (
                     <div
                       key={session.id}
@@ -241,6 +259,7 @@ export function BookingExperience() {
                     toast("Necesitamos tu nombre, WhatsApp y email.");
                     return;
                   }
+                  trackEvent("begin_checkout", { guests, value: total, currency: "PEN" });
                   setStep(3);
                 }}
               >
