@@ -260,11 +260,10 @@ export function BookingExperience() {
               <Row label="Hora" value={hour(selected.hora_inicio)} />
               <Row label="Personas" value={String(guests)} />
               <Row label="Precio por persona" value={money(selected.precio_por_persona)} />
-              <Row label="Total" value={money(total)} strong />
+              <div className="rounded-lg bg-musgo/15 px-5 py-3.5">
+                <Row label="Total" value={money(total)} strong />
+              </div>
             </div>
-            <p className="mt-4 text-xs leading-relaxed text-muted-foreground">
-              A nombre de {form.firstName} {form.lastName}. Te enviaremos los medios de pago a {form.email}.
-            </p>
             <div className="mt-8 flex gap-2">
               <Button onClick={() => reserve.mutate()} disabled={reserve.isPending}>
                 {reserve.isPending ? "Guardando…" : "Registrar reserva"}
