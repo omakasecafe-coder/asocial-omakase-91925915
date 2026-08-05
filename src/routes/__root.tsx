@@ -14,6 +14,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initAnalytics, trackPageView } from "@/lib/analytics";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieConsent } from "@/components/asocial/CookieConsent";
+import { onConsentChange } from "@/lib/cookie-consent";
 
 import { supabase } from "@/integrations/supabase/client";
 
@@ -136,6 +138,11 @@ function RootComponent() {
 
   useEffect(() => {
     initAnalytics();
+    return onConsentChange((value) => {
+      if (value !== "granted") return;
+      initAnalytics();
+      trackPageView(window.location.pathname);
+    });
   }, []);
 
   useEffect(() => {
@@ -157,6 +164,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster />
+      <CookieConsent />
     </QueryClientProvider>
   );
 }
