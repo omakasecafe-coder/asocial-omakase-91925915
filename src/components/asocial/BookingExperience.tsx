@@ -16,11 +16,24 @@ import bgCarbon from "@/assets/background-carbon.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";
-import { trackEvent } from "@/lib/analytics";
+import { trackEvent, trackMetaEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 
 type Step = 1 | 2 | 3 | 4;
+
+function sessionEventParams(session: PublicSession, guests = 1) {
+  const value = Number(session.precio_por_persona) * guests;
+  return {
+    content_ids: [session.id],
+    content_name: `Café omakase · ${session.fecha} ${session.hora_inicio.slice(0, 5)}`,
+    content_type: "product",
+    contents: [{ id: session.id, quantity: guests }],
+    currency: "PEN",
+    num_items: guests,
+    value,
+  };
+}
 
 export function BookingExperience() {
   const queryClient = useQueryClient();
@@ -67,6 +80,13 @@ export function BookingExperience() {
         currency: "PEN",
         items: selected ? [{ item_id: selected.id, item_name: longDay(selected.fecha), quantity: guests }] : [],
       });
+      if (selected) {
+        trackMetaEvent("Schedule", {
+          ...sessionEventParams(selected, guests),
+          order_id: result.bookingCode,
+          status: "payment_pending",
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["public-sessions"] });
     },
     onError: (error) => {
@@ -130,6 +150,7 @@ export function BookingExperience() {
                       session_date: session.fecha,
                       session_time: session.hora_inicio,
                     });
+                    trackMetaEvent("ViewContent", sessionEventParams(session));
                   };
 
                   return (
@@ -288,6 +309,16 @@ export function BookingExperience() {
                     return;
                   }
                   trackEvent("begin_checkout", { guests, value: total, currency: "PEN" });
+                  trackMetaEvent(
+                    "InitiateCheckout",
+                    selected
+                      ? sessionEventParams(selected, guests)
+                      : {
+                          currency: "PEN",
+                          num_items: guests,
+                          value: total,
+                        },
+                  );
                   setStep(3);
                 }}
               >

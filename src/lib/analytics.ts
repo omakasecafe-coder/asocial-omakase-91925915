@@ -7,6 +7,7 @@ const measurementId = import.meta.env['VITE_LOVABLE_CONNECTOR_GOOGLE_ANALYTICS_A
 declare global {
   interface Window {
     dataLayer?: unknown[];
+    fbq?: (command: "track" | "trackCustom", eventName: string, params?: Record<string, unknown>) => void;
   }
 }
 
@@ -53,3 +54,7 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}) {
   gtag("event", name, params);
 }
 
+export function trackMetaEvent(eventName: string, params: Record<string, unknown> = {}) {
+  if (typeof window === "undefined" || typeof window.fbq !== "function") return;
+  window.fbq("track", eventName, params);
+}
