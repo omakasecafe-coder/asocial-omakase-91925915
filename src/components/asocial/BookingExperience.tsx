@@ -175,7 +175,7 @@ export function BookingExperience() {
 
         {step === 2 && selected ? (
           <section className="card-soft bg-card/85 p-6 md:p-8">
-            <h1 className="text-xl font-medium">Cuéntanos quién viene</h1>
+            <h2 className="text-xl font-medium">Cuéntanos quién viene</h2>
             <SessionSummary session={selected} />
 
             <div className="mt-8 space-y-4">
@@ -274,7 +274,7 @@ export function BookingExperience() {
 
         {step === 3 && selected ? (
           <section>
-            <h1 className="text-xl font-medium">Revisa tu reserva</h1>
+            <h2 className="text-xl font-medium">Revisa tu reserva</h2>
             <div className="card-soft mt-6 divide-y divide-border">
               <Row label="Fecha" value={longDay(selected.fecha)} />
               <Row label="Hora" value={hour(selected.hora_inicio)} />
@@ -297,7 +297,7 @@ export function BookingExperience() {
 
         {step === 4 && confirmation && selected ? (
           <section className="animate-in fade-in duration-200">
-            <h1 className="text-xl font-medium">Tu lugar está reservado</h1>
+            <h2 className="text-xl font-medium">Tu lugar está reservado</h2>
             <div className="card-soft mt-6 divide-y divide-border">
               <Row label="Código" value={confirmation.code} strong />
               <Row label="Fecha" value={longDay(selected.fecha)} />
