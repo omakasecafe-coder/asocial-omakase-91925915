@@ -95,9 +95,9 @@ export function BookingExperience() {
         <div className="mx-auto max-w-2xl">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-11 w-auto drop-shadow-lg md:h-[3.25rem]" />
 
-          <h1 className="mt-4 text-sm font-medium leading-snug text-lino drop-shadow-md md:text-base">
+          <p className="mt-4 text-sm font-medium leading-snug text-lino drop-shadow-md md:text-base">
             Una experiencia guiada para descubrir el café con calma.
-          </h1>
+          </p>
         </div>
       </header>
 
@@ -106,7 +106,7 @@ export function BookingExperience() {
 
         {step === 1 ? (
           <section>
-            <h1 className="text-lg font-medium">Próximas experiencias</h1>
+            <h1 className="text-lg font-medium">Reserva tu sesión de café omakase</h1>
             <p className="mt-1 text-sm text-muted-foreground">Elige el horario que prefieras.</p>
 
             <div className="mt-6 space-y-3">
@@ -175,7 +175,7 @@ export function BookingExperience() {
 
         {step === 2 && selected ? (
           <section className="card-soft bg-card/85 p-6 md:p-8">
-            <h1 className="text-xl font-medium">Cuéntanos quién viene</h1>
+            <h2 className="text-xl font-medium">Cuéntanos quién viene</h2>
             <SessionSummary session={selected} />
 
             <div className="mt-8 space-y-4">
@@ -274,7 +274,7 @@ export function BookingExperience() {
 
         {step === 3 && selected ? (
           <section>
-            <h1 className="text-xl font-medium">Revisa tu reserva</h1>
+            <h2 className="text-xl font-medium">Revisa tu reserva</h2>
             <div className="card-soft mt-6 divide-y divide-border">
               <Row label="Fecha" value={longDay(selected.fecha)} />
               <Row label="Hora" value={hour(selected.hora_inicio)} />
@@ -297,7 +297,7 @@ export function BookingExperience() {
 
         {step === 4 && confirmation && selected ? (
           <section className="animate-in fade-in duration-200">
-            <h1 className="text-xl font-medium">Tu lugar está reservado</h1>
+            <h2 className="text-xl font-medium">Tu lugar está reservado</h2>
             <div className="card-soft mt-6 divide-y divide-border">
               <Row label="Código" value={confirmation.code} strong />
               <Row label="Fecha" value={longDay(selected.fecha)} />
