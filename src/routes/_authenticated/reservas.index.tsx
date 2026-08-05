@@ -171,6 +171,9 @@ function ReservationsPage() {
                       {money(paid)} de {money(r.total)}
                       {pending > 0 ? ` · pendiente ${money(pending)}` : ""}
                     </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Reservado el {stamp(r.created_at)}
+                    </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
                     <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, s)]}>
