@@ -672,7 +672,7 @@ export const listStaffUsers = createServerFn({ method: "GET" })
     const [{ data: users, error }, { data: roles }] = await Promise.all([
       context.supabase
         .from("staff_users")
-        .select("id, user_id, email, full_name, active, created_at")
+        .select("id, user_id, email, full_name, active, modules, created_at")
         .order("created_at"),
       context.supabase.from("user_roles").select("user_id, role"),
     ]);
@@ -689,6 +689,23 @@ export const listStaffUsers = createServerFn({ method: "GET" })
     };
   });
 
+export const getMyAccess = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const [{ data: isAdmin }, { data: me }] = await Promise.all([
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
+      context.supabase
+        .from("staff_users")
+        .select("modules, active")
+        .eq("user_id", context.userId)
+        .maybeSingle(),
+    ]);
+    return {
+      isAdmin: Boolean(isAdmin),
+      modules: (me?.modules ?? null) as string[] | null,
+    };
+  });
+
 export const createStaffUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -698,6 +715,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
         password: z.string().min(8).max(72),
         fullName: z.string().trim().max(120).optional().default(""),
         role: z.enum(["admin", "operator"]),
+        modules: z.array(z.string().max(40)).max(40).optional().default([]),
       })
       .parse(data),
   )
@@ -721,6 +739,7 @@ export const createStaffUser = createServerFn({ method: "POST" })
       email: data.email,
       full_name: data.fullName,
       active: true,
+      modules: data.modules,
     });
     await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: data.role });
 
@@ -742,6 +761,7 @@ export const updateStaffUser = createServerFn({ method: "POST" })
         fullName: z.string().trim().max(120).optional().default(""),
         role: z.enum(["admin", "operator"]),
         active: z.boolean(),
+        modules: z.array(z.string().max(40)).max(40).optional().default([]),
         password: z.string().max(72).optional().default(""),
       })
       .parse(data),
@@ -756,13 +776,13 @@ export const updateStaffUser = createServerFn({ method: "POST" })
 
     const { data: before } = await supabaseAdmin
       .from("staff_users")
-      .select("full_name, active")
+      .select("full_name, active, modules")
       .eq("user_id", data.userId)
       .maybeSingle();
 
     const { error } = await supabaseAdmin
       .from("staff_users")
-      .update({ full_name: data.fullName, active: data.active })
+      .update({ full_name: data.fullName, active: data.active, modules: data.modules })
       .eq("user_id", data.userId);
     if (error) throw new Error(error.message);
 
@@ -781,7 +801,7 @@ export const updateStaffUser = createServerFn({ method: "POST" })
       entityType: "staff_user",
       entityId: data.userId,
       oldValues: { full_name: before?.full_name ?? null, active: before?.active ?? null },
-      newValues: { full_name: data.fullName, active: data.active, role: data.role },
+      newValues: { full_name: data.fullName, active: data.active, role: data.role, modules: data.modules },
     });
     return { ok: true };
   });
