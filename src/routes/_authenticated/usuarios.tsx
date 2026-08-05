@@ -104,6 +104,7 @@ function CreateUserDialog({ open, onOpenChange }: { open: boolean; onOpenChange:
     mutationFn: () => createStaffUser({ data: form }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff-users"] });
+      queryClient.invalidateQueries({ queryKey: ["my-access"] });
       toast("Usuario creado");
       onOpenChange(false);
     },
@@ -205,6 +206,7 @@ function EditUserDialog({
     mutationFn: () => updateStaffUser({ data: { userId: user.user_id, ...form } }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff-users"] });
+      queryClient.invalidateQueries({ queryKey: ["my-access"] });
       toast("Usuario actualizado");
       onOpenChange(false);
     },
