@@ -125,7 +125,13 @@ export function BookingExperience() {
                     setSelected(session);
                     setGuests(1);
                     setStep(2);
+                    trackEvent("select_session", {
+                      session_id: session.id,
+                      session_date: session.fecha,
+                      session_time: session.hora_inicio,
+                    });
                   };
+
                   return (
                     <div
                       key={session.id}
