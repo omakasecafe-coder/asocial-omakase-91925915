@@ -10,7 +10,7 @@ declare global {
   }
 }
 
-export function gtag() {
+export function gtag(..._args: unknown[]) {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];
   // GA requires the raw `arguments` object here, not an array.
