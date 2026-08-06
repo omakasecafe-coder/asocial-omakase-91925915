@@ -8,6 +8,10 @@ declare global {
   interface Window {
     dataLayer?: unknown[];
     fbq?: (command: "track" | "trackCustom", eventName: string, params?: Record<string, unknown>) => void;
+    ttq?: {
+      identify?: (params: Record<string, string>) => void;
+      track?: (eventName: string, params?: Record<string, unknown>) => void;
+    };
   }
 }
 
@@ -57,4 +61,56 @@ export function trackEvent(name: string, params: Record<string, unknown> = {}) {
 export function trackMetaEvent(eventName: string, params: Record<string, unknown> = {}) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") return;
   window.fbq("track", eventName, params);
+}
+
+function normalizeHashInput(value?: string, type: "email" | "phone" | "externalId" = "externalId") {
+  const trimmed = value?.trim();
+  if (!trimmed) return "";
+  if (type === "email") return trimmed.toLowerCase();
+  if (type === "phone") return trimmed.replace(/\D/g, "");
+  return trimmed;
+}
+
+async function sha256(value: string) {
+  if (!value) return "";
+
+  const cryptoApi = globalThis.crypto?.subtle;
+  if (!cryptoApi) return "";
+
+  const buffer = await cryptoApi.digest("SHA-256", new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(buffer))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+export async function identifyTikTokUser({
+  email,
+  phone,
+  externalId,
+}: {
+  email?: string;
+  phone?: string;
+  externalId?: string;
+}) {
+  if (typeof window === "undefined" || typeof window.ttq?.identify !== "function") return;
+
+  const [hashedEmail, hashedPhone, hashedExternalId] = await Promise.all([
+    sha256(normalizeHashInput(email, "email")),
+    sha256(normalizeHashInput(phone, "phone")),
+    sha256(normalizeHashInput(externalId, "externalId")),
+  ]);
+
+  const payload: Record<string, string> = {};
+  if (hashedEmail) payload.email = hashedEmail;
+  if (hashedPhone) payload.phone_number = hashedPhone;
+  if (hashedExternalId) payload.external_id = hashedExternalId;
+
+  if (Object.keys(payload).length > 0) {
+    window.ttq.identify(payload);
+  }
+}
+
+export function trackTikTokEvent(eventName: string, params: Record<string, unknown> = {}) {
+  if (typeof window === "undefined" || typeof window.ttq?.track !== "function") return;
+  window.ttq.track(eventName, params);
 }

@@ -16,7 +16,7 @@ import bgCarbon from "@/assets/background-carbon.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, type PublicSession } from "@/lib/public.functions";
 import { hour, money, relativeDay, longDay } from "@/lib/format";
-import { trackEvent, trackMetaEvent } from "@/lib/analytics";
+import { identifyTikTokUser, trackEvent, trackMetaEvent, trackTikTokEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 
@@ -32,6 +32,21 @@ function sessionEventParams(session: PublicSession, guests = 1) {
     currency: "PEN",
     num_items: guests,
     value,
+  };
+}
+
+function tiktokSessionEventParams(session: PublicSession, guests = 1) {
+  const value = Number(session.precio_por_persona) * guests;
+  return {
+    contents: [
+      {
+        content_id: session.id,
+        content_type: "product",
+        content_name: `Café omakase · ${session.fecha} ${session.hora_inicio.slice(0, 5)}`,
+      },
+    ],
+    value,
+    currency: "PEN",
   };
 }
 
@@ -86,6 +101,18 @@ export function BookingExperience() {
           order_id: result.bookingCode,
           status: "payment_pending",
         });
+        void (async () => {
+          await identifyTikTokUser({
+            email: form.email,
+            phone: form.phone,
+            externalId: result.bookingCode,
+          });
+          trackTikTokEvent("CompleteRegistration", {
+            ...tiktokSessionEventParams(selected, guests),
+            order_id: result.bookingCode,
+            status: "payment_pending",
+          });
+        })();
       }
       queryClient.invalidateQueries({ queryKey: ["public-sessions"] });
     },
@@ -151,6 +178,7 @@ export function BookingExperience() {
                       session_time: session.hora_inicio,
                     });
                     trackMetaEvent("ViewContent", sessionEventParams(session));
+                    trackTikTokEvent("ViewContent", tiktokSessionEventParams(session));
                   };
 
                   return (
@@ -319,6 +347,13 @@ export function BookingExperience() {
                           value: total,
                         },
                   );
+                  void (async () => {
+                    await identifyTikTokUser({ email: form.email, phone: form.phone });
+                    trackTikTokEvent("ClickButton", {
+                      ...tiktokSessionEventParams(selected, guests),
+                      button_name: "Continuar reserva",
+                    });
+                  })();
                   setStep(3);
                 }}
               >
@@ -344,7 +379,16 @@ export function BookingExperience() {
               </div>
             </div>
             <div className="mt-8 flex gap-2">
-              <Button onClick={() => reserve.mutate()} disabled={reserve.isPending}>
+              <Button
+                onClick={() => {
+                  trackTikTokEvent("ClickButton", {
+                    ...tiktokSessionEventParams(selected, guests),
+                    button_name: "Registrar reserva",
+                  });
+                  reserve.mutate();
+                }}
+                disabled={reserve.isPending}
+              >
                 {reserve.isPending ? "Guardando…" : "Registrar reserva"}
               </Button>
               <Button variant="ghost" onClick={() => setStep(2)}>
