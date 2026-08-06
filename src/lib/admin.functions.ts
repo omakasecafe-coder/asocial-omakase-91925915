@@ -170,7 +170,9 @@ export const createReservationAdmin = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { sendReservationPaymentInstructionsEmail } = await import("@/lib/admin.server");
+    const { sendReservationPaymentInstructionsEmail, sendInternalNewReservationEmail } = await import(
+      "@/lib/admin.server"
+    );
     const args = {
       _session_id: data.sessionId,
       _first_name: data.firstName || "Invitado",
@@ -193,6 +195,11 @@ export const createReservationAdmin = createServerFn({ method: "POST" })
     const email = shouldSendPaymentInstructions
       ? await sendReservationPaymentInstructionsEmail(context.supabase, reservation.id)
       : { sent: false, reason: "not_pending_payment" };
+    try {
+      await sendInternalNewReservationEmail(context.supabase, reservation.id);
+    } catch (err) {
+      console.error("internal_new_reservation_email_failed", err);
+    }
     return { bookingCode: reservation.booking_code, email };
   });
 

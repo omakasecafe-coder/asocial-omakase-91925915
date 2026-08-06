@@ -223,3 +223,84 @@ export async function sendTestTemplateEmail(supabase: DB, key: string, to: strin
     label: `test_${key}`,
   });
 }
+
+/* --------------------- internal (staff) notifications --------------------- */
+
+const INTERNAL_NOTIFICATION_TO = "reservas@asocialcafe.com";
+
+const shortDate = (iso: string) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(
+    new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1)),
+  );
+};
+
+/** Notifies the team by email as soon as a new reservation is created. */
+export async function sendInternalNewReservationEmail(supabase: DB, reservationId: string) {
+  const { data: reservation } = await supabase
+    .from("reservations")
+    .select(
+      "id, booking_code, guest_count, total, source, notes, dietary_notes, reservation_status, payment_status, session_id, customer_id, created_at",
+    )
+    .eq("id", reservationId)
+    .maybeSingle();
+  if (!reservation) return { sent: false, reason: "missing_reservation" };
+
+  const [{ data: customer }, { data: session }, { data: settings }] = await Promise.all([
+    supabase
+      .from("customers")
+      .select("first_name, last_name, email, phone")
+      .eq("id", reservation.customer_id)
+      .maybeSingle(),
+    supabase.from("sessions").select("fecha, hora_inicio, hora_fin").eq("id", reservation.session_id).maybeSingle(),
+    supabase.from("settings").select("business_name, currency").eq("id", true).maybeSingle(),
+  ]);
+
+  const currency = settings?.currency ?? "PEN";
+  const fecha = session?.fecha ?? "";
+  const hora = (session?.hora_inicio ?? "").slice(0, 5);
+  const customerName = `${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`.trim() || "Sin nombre";
+
+  const subject = `Nueva reserva · ${shortDate(fecha)} · ${hora} · ${reservation.guest_count} ${
+    reservation.guest_count === 1 ? "persona" : "personas"
+  } · ${reservation.booking_code}`;
+
+  const body = [
+    `Código: ${reservation.booking_code}`,
+    `Fecha: ${longDate(fecha)}`,
+    `Hora: ${hora}${session?.hora_fin ? ` – ${String(session.hora_fin).slice(0, 5)}` : ""}`,
+    `Personas: ${reservation.guest_count}`,
+    `Total: ${money(Number(reservation.total ?? 0), currency)}`,
+    "",
+    `Cliente: ${customerName}`,
+    `Email: ${customer?.email ?? "—"}`,
+    `WhatsApp: ${customer?.phone ?? "—"}`,
+    "",
+    `Origen: ${reservation.source === "admin" ? "Panel administrativo" : "Web"}`,
+    `Estado: ${reservationStatusEs[reservation.reservation_status] ?? reservation.reservation_status}`,
+    `Pago: ${reservation.payment_status === "paid" ? "Pagado" : reservation.payment_status === "partial" ? "Pagado parcialmente" : "No pagado"}`,
+    reservation.notes ? `\nNotas: ${reservation.notes}` : "",
+    reservation.dietary_notes ? `Restricciones: ${reservation.dietary_notes}` : "",
+  ]
+    .filter((line) => line !== "")
+    .join("\n");
+
+  const template: TemplateRow = {
+    template_key: "internal_new_reservation",
+    subject,
+    title: "Nueva reserva recibida",
+    body,
+    signature: "",
+    extra_info: "",
+    enabled: true,
+  };
+
+  return sendTemplateEmail({
+    template,
+    to: INTERNAL_NOTIFICATION_TO,
+    vars: { business_name: settings?.business_name ?? "asocial" },
+    idempotencyKey: `internal-new-reservation-${reservationId}`,
+    label: "internal_new_reservation",
+  });
+}

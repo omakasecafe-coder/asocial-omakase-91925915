@@ -69,10 +69,8 @@ export const createPublicReservation = createServerFn({ method: "POST" })
     };
     if (!row) throw new Error("No se pudo crear la reserva");
 
-    const [{ supabaseAdmin }, { sendReservationPaymentInstructionsEmail }] = await Promise.all([
-      import("@/integrations/supabase/client.server"),
-      import("@/lib/admin.server"),
-    ]);
+    const [{ supabaseAdmin }, { sendReservationPaymentInstructionsEmail, sendInternalNewReservationEmail }] =
+      await Promise.all([import("@/integrations/supabase/client.server"), import("@/lib/admin.server")]);
     const { data: reservation } = await supabaseAdmin
       .from("reservations")
       .select("id")
@@ -81,6 +79,13 @@ export const createPublicReservation = createServerFn({ method: "POST" })
     const email = reservation
       ? await sendReservationPaymentInstructionsEmail(supabaseAdmin, reservation.id)
       : { sent: false, reason: "missing_reservation" };
+    if (reservation) {
+      try {
+        await sendInternalNewReservationEmail(supabaseAdmin, reservation.id);
+      } catch (err) {
+        console.error("internal_new_reservation_email_failed", err);
+      }
+    }
 
     return { bookingCode: row.booking_code, total: Number(row.total), guests: row.guest_count, email };
   });

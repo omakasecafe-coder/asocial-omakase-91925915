@@ -101,9 +101,9 @@ export async function identifyTikTokUser({
   ]);
 
   const payload: Record<string, string> = {};
-  if (hashedEmail) payload.email = hashedEmail;
-  if (hashedPhone) payload.phone_number = hashedPhone;
-  if (hashedExternalId) payload.external_id = hashedExternalId;
+  if (hashedEmail) payload["email"] = hashedEmail;
+  if (hashedPhone) payload["phone_number"] = hashedPhone;
+  if (hashedExternalId) payload["external_id"] = hashedExternalId;
 
   if (Object.keys(payload).length > 0) {
     window.ttq.identify(payload);
