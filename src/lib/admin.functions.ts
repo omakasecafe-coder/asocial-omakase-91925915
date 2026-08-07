@@ -231,6 +231,48 @@ export const cancelReservation = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+async function sendReservationConfirmedAnalytics(
+  reservation: {
+    id: string;
+    booking_code: string;
+    guest_count: number;
+    session_id: string;
+    total: number | string;
+  },
+  paymentId: string,
+) {
+  const { sendServerGaEvents } = await import("@/lib/analytics.server");
+  const value = Number(reservation.total ?? 0);
+  const item = {
+    item_id: reservation.session_id,
+    item_name: "Café omakase",
+    quantity: reservation.guest_count,
+  };
+
+  return sendServerGaEvents(reservation.id, [
+    {
+      name: "reservation_confirmed",
+      params: {
+        reservation_id: reservation.booking_code,
+        payment_id: paymentId,
+        value,
+        currency: "PEN",
+        status: "paid",
+        items: [item],
+      },
+    },
+    {
+      name: "purchase",
+      params: {
+        transaction_id: reservation.booking_code,
+        value,
+        currency: "PEN",
+        items: [item],
+      },
+    },
+  ]);
+}
+
 export const registerPayment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
@@ -268,7 +310,7 @@ export const registerPayment = createServerFn({ method: "POST" })
     const [{ data: reservation }, { data: payment }] = await Promise.all([
       context.supabase
         .from("reservations")
-        .select("payment_status, reservation_status")
+        .select("id, booking_code, guest_count, session_id, total, payment_status, reservation_status")
         .eq("id", data.reservationId)
         .maybeSingle(),
       context.supabase
@@ -286,7 +328,11 @@ export const registerPayment = createServerFn({ method: "POST" })
       ready && payment
         ? await sendPaymentConfirmedEmail(context.supabase, payment.id)
         : { sent: false, reason: "payment_not_complete" };
-    return { ok: true, email };
+    const analytics =
+      ready && payment && reservation
+        ? await sendReservationConfirmedAnalytics(reservation, payment.id)
+        : { sent: false, reason: "payment_not_complete" };
+    return { ok: true, email, analytics };
   });
 
 export const setAttendance = createServerFn({ method: "POST" })
@@ -519,7 +565,7 @@ export const updatePaymentStatus = createServerFn({ method: "POST" })
     const [{ data: reservation }, { data: payments }] = await Promise.all([
       context.supabase
         .from("reservations")
-        .select("id, total, payment_status, reservation_status")
+        .select("id, booking_code, guest_count, session_id, total, payment_status, reservation_status")
         .eq("id", before.reservation_id)
         .maybeSingle(),
       context.supabase
@@ -543,10 +589,14 @@ export const updatePaymentStatus = createServerFn({ method: "POST" })
     }
 
     let email: { sent: boolean; reason?: string } = { sent: false, reason: "no_transition" };
+    let analytics: { sent: boolean; reason?: string } = { sent: false, reason: "no_transition" };
     if (data.status === "paid" && before.status !== "paid" && isFullyPaid) {
       email = await sendPaymentConfirmedEmail(context.supabase, data.paymentId);
+      if (reservation) {
+        analytics = await sendReservationConfirmedAnalytics(reservation, data.paymentId);
+      }
     }
-    return { ok: true, email };
+    return { ok: true, email, analytics };
   });
 
 export const createRefund = createServerFn({ method: "POST" })

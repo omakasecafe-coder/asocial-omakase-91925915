@@ -89,10 +89,11 @@ export function BookingExperience() {
     onSuccess: (result) => {
       setConfirmation({ code: result.bookingCode, total: result.total });
       setStep(4);
-      trackEvent("purchase", {
-        transaction_id: result.bookingCode,
+      trackEvent("reservation_created", {
+        reservation_id: result.bookingCode,
         value: result.total,
         currency: "PEN",
+        status: "payment_pending",
         items: selected ? [{ item_id: selected.id, item_name: longDay(selected.fecha), quantity: guests }] : [],
       });
       if (selected) {
