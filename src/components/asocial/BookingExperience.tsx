@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 
 
 type Step = 1 | 2 | 3 | 4;
+type ContactErrors = Partial<Record<"firstName" | "email" | "phone", string>>;
 
 function sessionEventParams(session: PublicSession, guests = 1) {
   const value = Number(session.precio_por_persona) * guests;
@@ -65,12 +66,52 @@ export function BookingExperience() {
     dietary: "",
     notes: "",
   });
+  const [formErrors, setFormErrors] = useState<ContactErrors>({});
   const [confirmation, setConfirmation] = useState<{ code: string; total: number } | null>(null);
 
   const total = useMemo(
     () => (selected ? Number(selected.precio_por_persona) * guests : 0),
     [selected, guests],
   );
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [step]);
+
+  const clearFormError = (key: keyof ContactErrors) => {
+    setFormErrors((current) => {
+      if (!current[key]) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const validateContact = () => {
+    const errors: ContactErrors = {};
+    const email = form.email.trim();
+
+    if (!form.firstName.trim()) errors.firstName = "Cuéntanos tu nombre.";
+    if (!email) {
+      errors.email = "Necesitamos tu email para enviarte los medios de pago.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = "Revisa que el email esté bien escrito.";
+    }
+    if (form.phone.trim().length < 6) errors.phone = "Necesitamos tu WhatsApp para coordinar la confirmación.";
+
+    setFormErrors(errors);
+
+    const firstError = Object.keys(errors)[0];
+    if (firstError) {
+      requestAnimationFrame(() => {
+        document
+          .querySelector(`[data-booking-field="${firstError}"]`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    }
+
+    return Object.keys(errors).length === 0;
+  };
 
   const reserve = useMutation({
     mutationFn: () =>
@@ -156,6 +197,9 @@ export function BookingExperience() {
           <section>
             <h1 className="text-lg font-medium">Reserva tu sesión de café omakase</h1>
             <p className="mt-1 text-sm text-muted-foreground">Elige el horario que prefieras.</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+              Luego registras tus datos y te enviamos los medios de pago para confirmar tu lugar.
+            </p>
 
             <div className="mt-6 space-y-3">
               {isLoading ? (
@@ -283,10 +327,13 @@ export function BookingExperience() {
               </Field>
 
               <div className="grid gap-4">
-                <Field label="Nombre">
+                <Field label="Nombre" fieldKey="firstName" error={formErrors.firstName}>
                   <Input
                     value={form.firstName}
-                    onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+                    onChange={(e) => {
+                      setForm({ ...form, firstName: e.target.value });
+                      clearFormError("firstName");
+                    }}
                     className="bg-card"
                   />
                 </Field>
@@ -297,20 +344,27 @@ export function BookingExperience() {
                     className="bg-card"
                   />
                 </Field>
-                <Field label="Email">
+                <Field label="Email" fieldKey="email" error={formErrors.email}>
                   <Input
                     type="email"
                     value={form.email}
-                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    onChange={(e) => {
+                      setForm({ ...form, email: e.target.value });
+                      clearFormError("email");
+                    }}
                     className="bg-card"
                   />
                 </Field>
-                <div>
+                <div className="space-y-2" data-booking-field="phone">
                   <PhoneInput
                     value={form.phone}
-                    onChange={(phone) => setForm({ ...form, phone })}
+                    onChange={(phone) => {
+                      setForm({ ...form, phone });
+                      clearFormError("phone");
+                    }}
                     placeholder="Número de celular"
                   />
+                  {formErrors.phone ? <FieldError>{formErrors.phone}</FieldError> : null}
                 </div>
               </div>
 
@@ -333,8 +387,8 @@ export function BookingExperience() {
             <div className="mt-8 flex gap-2">
               <Button
                 onClick={() => {
-                  if (!form.firstName.trim() || !form.email.trim() || form.phone.trim().length < 6) {
-                    toast("Necesitamos tu nombre, WhatsApp y email.");
+                  if (!validateContact()) {
+                    toast("Revisa los datos marcados.");
                     return;
                   }
                   trackEvent("begin_checkout", { guests, value: total, currency: "PEN" });
@@ -375,22 +429,27 @@ export function BookingExperience() {
               <Row label="Hora" value={hour(selected.hora_inicio)} />
               <Row label="Personas" value={String(guests)} />
               <Row label="Precio por persona" value={money(selected.precio_por_persona)} />
+              <Row label="Estado de pago" value="Pago por confirmar" strong />
               <div className="rounded-lg bg-musgo/15 px-5 py-3.5">
                 <Row label="Total" value={money(total)} strong />
               </div>
             </div>
+            <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              Tu reserva quedará pendiente hasta que validemos el pago. Te enviaremos los medios disponibles por correo.
+            </p>
             <div className="mt-8 flex gap-2">
               <Button
                 onClick={() => {
                   trackTikTokEvent("ClickButton", {
                     ...tiktokSessionEventParams(selected, guests),
-                    button_name: "Registrar reserva",
+                    button_name: "Solicitar reserva",
                   });
                   reserve.mutate();
                 }}
                 disabled={reserve.isPending}
               >
-                {reserve.isPending ? "Guardando…" : "Registrar reserva"}
+                {reserve.isPending ? "Solicitando…" : "Solicitar reserva"}
               </Button>
               <Button variant="ghost" onClick={() => setStep(2)}>
                 Volver
@@ -438,13 +497,28 @@ function SessionSummary({ session }: { session: PublicSession }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+  error,
+  fieldKey,
+}: {
+  label: string;
+  children: React.ReactNode;
+  error?: string;
+  fieldKey?: string;
+}) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2" data-booking-field={fieldKey}>
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
+      {error ? <FieldError>{error}</FieldError> : null}
     </div>
   );
+}
+
+function FieldError({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs font-medium text-arcilla">{children}</p>;
 }
 
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {

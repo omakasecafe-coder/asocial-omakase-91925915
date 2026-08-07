@@ -22,15 +22,16 @@ export function CookieConsent() {
     <div
       role="dialog"
       aria-label="Preferencias de cookies"
-      className="fixed inset-x-0 bottom-0 z-50 p-4"
+      className="fixed inset-x-3 bottom-3 z-50 sm:left-auto sm:right-4 sm:w-[min(24rem,calc(100vw-2rem))]"
     >
-      <div className="mx-auto flex max-w-2xl flex-col gap-3 rounded-xl border border-border bg-card/95 p-4 shadow-lg backdrop-blur sm:flex-row sm:items-center">
-        <Cookie className="hidden h-5 w-5 shrink-0 text-muted-foreground sm:block" strokeWidth={1.5} />
-        <p className="text-xs leading-relaxed text-muted-foreground">
-          Usamos cookies de analítica para entender cómo se usa la web y mejorar la experiencia de
-          reserva. Puedes aceptarlas o seguir solo con las cookies necesarias.
-        </p>
-        <div className="flex shrink-0 gap-2">
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card/95 p-3 shadow-lg backdrop-blur">
+        <div className="flex gap-2">
+          <Cookie className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" strokeWidth={1.5} />
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Usamos analítica para mejorar la experiencia de reserva. Puedes aceptar o seguir solo con lo necesario.
+          </p>
+        </div>
+        <div className="flex justify-end gap-2">
           <Button size="sm" variant="outline" onClick={() => choose("denied")}>
             Solo necesarias
           </Button>
