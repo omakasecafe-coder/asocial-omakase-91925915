@@ -479,7 +479,28 @@ export function BookingExperience() {
       </main>
 
       <footer className="mt-auto border-t border-border/60 px-5 py-6 text-center text-xs tracking-wide text-muted-foreground">
-        menos ruido, más café.
+        <div className="flex items-center justify-center gap-4">
+          <a
+            href="https://wa.me/51919112980"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-foreground"
+          >
+            <Phone className="h-3.5 w-3.5" />
+            WhatsApp
+          </a>
+          <span className="text-border">·</span>
+          <a
+            href="https://www.instagram.com/omakase.cafe/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-foreground"
+          >
+            <Instagram className="h-3.5 w-3.5" />
+            Instagram
+          </a>
+        </div>
+        <p className="mt-3">menos ruido, más café.</p>
       </footer>
     </div>
   );
