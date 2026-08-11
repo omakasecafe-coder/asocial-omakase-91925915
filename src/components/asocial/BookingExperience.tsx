@@ -471,8 +471,7 @@ export function BookingExperience() {
             </div>
             <p className="mt-6 flex items-start gap-2 text-sm font-semibold leading-relaxed text-foreground">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              Te enviamos un correo con el resumen y los medios de pago. Envíanos el comprobante por WhatsApp y tu
-              reserva quedará confirmada.
+              Te enviamos un correo con el resumen de tu solicitud de reserva; así como los medios de pago disponibles. Envíanos el comprobante al WhatsApp +51 919 112 980 y tu reserva quedará confirmada.
             </p>
           </section>
         ) : null}
