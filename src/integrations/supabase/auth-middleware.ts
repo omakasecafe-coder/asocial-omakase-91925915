@@ -3,6 +3,7 @@ import { createMiddleware } from '@tanstack/react-start'
 import { getRequest } from '@tanstack/react-start/server'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from './types'
+import { attachSupabaseAuth } from './auth-attacher'
 
 
 
@@ -30,8 +31,11 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
-export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
-  async ({ next }) => {
+// Attach the browser session explicitly to every protected server function.
+// This remains reliable when Lovable runs serverFns in its split dev server.
+export const requireSupabaseAuth = createMiddleware({ type: 'function' })
+  .middleware([attachSupabaseAuth])
+  .server(async ({ next }) => {
     
     const SUPABASE_URL = process.env['SUPABASE_URL'];
     const SUPABASE_PUBLISHABLE_KEY = process.env['SUPABASE_PUBLISHABLE_KEY'];
@@ -105,5 +109,4 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
         claims: data.claims,
       },
     });
-  },
-);
+  });
