@@ -127,11 +127,13 @@ const copy = {
   },
 } as const;
 
-const bookingUrl = "https://reservas.asocialcafe.com/reservar";
-
 export function PublicOmakaseLanding() {
   const [language, setLanguage] = useState<Language>("es");
   const t = copy[language];
+  const bookingUrl =
+    language === "en"
+      ? "https://reservas.asocialcafe.com/reservar?lang=en"
+      : "https://reservas.asocialcafe.com/reservar";
 
   useEffect(() => {
     document.documentElement.lang = language;
