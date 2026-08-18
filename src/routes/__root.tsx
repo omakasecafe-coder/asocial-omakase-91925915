@@ -19,10 +19,9 @@ import { onConsentChange } from "@/lib/cookie-consent";
 
 import { supabase } from "@/integrations/supabase/client";
 
-const siteUrl = "https://reservas.asocialcafe.com";
-const siteTitle = "asocial café omakase — reservas";
+const siteTitle = "asocial café omakase";
 const siteDescription =
-  "Reserva una experiencia privada de café omakase en asocial: una barra guiada, cupos limitados y un ritmo pausado para descubrir el café con calma.";
+  "Una experiencia de café omakase en Barranco: una barra íntima, un recorrido guiado y una pausa para descubrir el café de otra manera.";
 const metaPixelId = "1687497742354743";
 const metaPixelCode = `
 !function(f,b,e,v,n,t,s)
@@ -123,7 +122,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "robots", content: "index, follow" },
       { property: "og:type", content: "website" },
       { property: "og:site_name", content: "asocial café omakase" },
-      { property: "og:url", content: siteUrl },
       { property: "og:title", content: siteTitle },
       { property: "og:description", content: siteDescription },
       { property: "og:locale", content: "es_PE" },
@@ -132,7 +130,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: siteDescription },
     ],
     links: [
-      { rel: "canonical", href: siteUrl },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
