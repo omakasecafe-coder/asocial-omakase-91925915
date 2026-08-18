@@ -28,7 +28,6 @@ import {
 import { identifyTikTokUser, trackEvent, trackMetaEvent, trackTikTokEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
-
 type Step = 1 | 2 | 3 | 4;
 type ContactErrors = Partial<Record<"firstName" | "email" | "phone", string>>;
 
@@ -58,6 +57,18 @@ function tiktokSessionEventParams(session: PublicSession, guests = 1) {
     value,
     currency: "PEN",
   };
+}
+
+function analyticsItems(session: PublicSession, guests: number) {
+  return [
+    {
+      item_id: session.id,
+      item_name: `Café omakase · ${session.fecha} ${session.hora_inicio.slice(0, 5)}`,
+      item_category: "coffee_omakase",
+      price: Number(session.precio_por_persona),
+      quantity: guests,
+    },
+  ];
 }
 
 export function BookingExperience({ lang: langProp }: { lang?: string | undefined } = {}) {
@@ -150,7 +161,16 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
         value: result.total,
         currency: "PEN",
         status: "payment_pending",
-        items: selected ? [{ item_id: selected.id, item_name: longDayI18n(selected.fecha, lang), quantity: guests }] : [],
+        language: lang,
+        items: selected ? analyticsItems(selected, guests) : [],
+      });
+      trackEvent("generate_lead", {
+        value: result.total,
+        currency: "PEN",
+        lead_source: "website_reservation",
+        status: "payment_pending",
+        language: lang,
+        items: selected ? analyticsItems(selected, guests) : [],
       });
       if (selected) {
         trackMetaEvent("Schedule", {
@@ -174,10 +194,11 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
       queryClient.invalidateQueries({ queryKey: ["public-sessions"] });
     },
     onError: (error) => {
-      trackEvent("reservation_error", { message: error instanceof Error ? error.message : "unknown" });
+      trackEvent("reservation_error", {
+        message: error instanceof Error ? error.message : "unknown",
+      });
       toast(error instanceof Error ? error.message : t.errSave);
     },
-
   });
 
   return (
@@ -197,7 +218,11 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
         />
 
         <div className="mx-auto max-w-2xl">
-          <img src={logoLight.url} alt="asocial · café omakase" className="h-11 w-auto drop-shadow-lg md:h-[3.25rem]" />
+          <img
+            src={logoLight.url}
+            alt="asocial · café omakase"
+            className="h-11 w-auto drop-shadow-lg md:h-[3.25rem]"
+          />
 
           <div className="mt-4 flex items-start justify-between gap-4">
             <p className="max-w-md text-sm font-medium leading-snug text-lino drop-shadow-md md:text-base">
@@ -221,10 +246,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
               {isLoading ? (
                 <p className="text-sm text-muted-foreground">{t.loading}</p>
               ) : sessions.length === 0 ? (
-                <EmptyState
-                  title={t.emptyTitle}
-                  description={t.emptyDescription}
-                />
+                <EmptyState title={t.emptyTitle} description={t.emptyDescription} />
               ) : (
                 sessions.map((session) => {
                   const full = session.available <= 0;
@@ -237,6 +259,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                       session_id: session.id,
                       session_date: session.fecha,
                       session_time: session.hora_inicio,
+                      language: lang,
                     });
                     trackMetaEvent("ViewContent", sessionEventParams(session));
                     trackTikTokEvent("ViewContent", tiktokSessionEventParams(session));
@@ -256,14 +279,19 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                           <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
                             {relativeDayI18n(session.fecha, lang)}
                           </p>
-                          <p className="mt-0.5 text-lg font-medium leading-tight">{hourI18n(session.hora_inicio, lang)}</p>
+                          <p className="mt-0.5 text-lg font-medium leading-tight">
+                            {hourI18n(session.hora_inicio, lang)}
+                          </p>
                           {session.descripcion_publica ? (
                             <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-muted-foreground">
                               {session.descripcion_publica}
                             </p>
                           ) : null}
                         </div>
-                        <AvailabilityBadge available={session.available} label={seatsLabelI18n(session.available, lang)} />
+                        <AvailabilityBadge
+                          available={session.available}
+                          label={seatsLabelI18n(session.available, lang)}
+                        />
                       </div>
                       <Button
                         className="mt-3 w-full rounded-xl"
@@ -289,15 +317,21 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
               </div>
               <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t.formatLabel}</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    {t.formatLabel}
+                  </dt>
                   <dd className="mt-1 text-foreground">{t.formatValue}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t.seatsLabel}</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    {t.seatsLabel}
+                  </dt>
                   <dd className="mt-1 text-foreground">{t.seatsValue}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t.bookingLabel}</dt>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
+                    {t.bookingLabel}
+                  </dt>
                   <dd className="mt-1 text-foreground">{t.bookingValue}</dd>
                 </div>
               </dl>
@@ -401,7 +435,13 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                     toast(t.errReview);
                     return;
                   }
-                  trackEvent("begin_checkout", { guests, value: total, currency: "PEN" });
+                  trackEvent("begin_checkout", {
+                    guests,
+                    value: total,
+                    currency: "PEN",
+                    language: lang,
+                    items: analyticsItems(selected, guests),
+                  });
                   trackMetaEvent(
                     "InitiateCheckout",
                     selected
@@ -549,7 +589,10 @@ function SessionSummary({ session, lang }: { session: PublicSession; lang: Lang 
         <p className="text-sm">{relativeDayI18n(session.fecha, lang)}</p>
         <p className="mt-0.5 text-base font-medium">{hourI18n(session.hora_inicio, lang)}</p>
       </div>
-      <AvailabilityBadge available={session.available} label={seatsLabelI18n(session.available, lang)} />
+      <AvailabilityBadge
+        available={session.available}
+        label={seatsLabelI18n(session.available, lang)}
+      />
     </div>
   );
 }

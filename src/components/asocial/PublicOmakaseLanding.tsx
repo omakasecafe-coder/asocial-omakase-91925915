@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowDown, ArrowUpRight, Clock, Instagram, MapPin, Phone, Users } from "lucide-react";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
+import { trackEvent } from "@/lib/analytics";
 
 type Language = "es" | "en";
 
@@ -64,6 +65,7 @@ const copy = {
     ctaBody: "Cinco lugares por sesión. El resto lo preparamos nosotros.",
     reserveExperience: "Reservar experiencia",
     footer: "menos ruido. más café.",
+    heroAlt: "Experiencia de café omakase en una barra de madera",
   },
   en: {
     navExperience: "The experience",
@@ -124,11 +126,12 @@ const copy = {
     ctaBody: "Five seats per session. We take care of the rest.",
     reserveExperience: "Book the experience",
     footer: "less noise. more coffee.",
+    heroAlt: "Coffee omakase experience at an intimate wooden bar",
   },
 } as const;
 
-export function PublicOmakaseLanding() {
-  const [language, setLanguage] = useState<Language>("es");
+export function PublicOmakaseLanding({ initialLanguage = "es" }: { initialLanguage?: Language }) {
+  const [language, setLanguage] = useState<Language>(initialLanguage);
   const t = copy[language];
   const bookingUrl =
     language === "en"
@@ -136,11 +139,26 @@ export function PublicOmakaseLanding() {
       : "https://reservas.asocialcafe.com/reservar";
 
   useEffect(() => {
+    setLanguage(initialLanguage);
+  }, [initialLanguage]);
+
+  useEffect(() => {
     document.documentElement.lang = language;
     return () => {
       document.documentElement.lang = "es";
     };
   }, [language]);
+
+  const languageUrl = (next: Language) => (next === "en" ? "/?lang=en" : "/");
+  const trackReservationClick = (ctaLocation: string) =>
+    trackEvent("select_content", {
+      content_type: "reservation_cta",
+      content_id: ctaLocation,
+      cta_location: ctaLocation,
+      language,
+    });
+  const trackContactClick = (channel: "whatsapp" | "instagram") =>
+    trackEvent("contact_click", { channel, cta_location: "footer", language });
 
   return (
     <div className="min-h-screen overflow-hidden bg-lino text-carbon selection:bg-nogal selection:text-lino">
@@ -163,21 +181,27 @@ export function PublicOmakaseLanding() {
           <div className="flex items-center gap-3">
             <div className="flex rounded-full border border-white/20 p-0.5 text-[10px] tracking-[0.14em]">
               {(["es", "en"] as const).map((item) => (
-                <button
+                <a
                   key={item}
-                  type="button"
-                  onClick={() => setLanguage(item)}
-                  aria-pressed={language === item}
+                  href={languageUrl(item)}
+                  onClick={() =>
+                    trackEvent("language_change", {
+                      from_language: language,
+                      to_language: item,
+                    })
+                  }
+                  aria-current={language === item ? "page" : undefined}
                   className={`rounded-full px-2.5 py-1.5 transition-colors ${
                     language === item ? "bg-lino text-carbon" : "text-lino/65 hover:text-lino"
                   }`}
                 >
                   {item.toUpperCase()}
-                </button>
+                </a>
               ))}
             </div>
             <a
               href={bookingUrl}
+              onClick={() => trackReservationClick("header")}
               className="hidden items-center gap-1.5 rounded-full bg-lino px-4 py-2 text-xs font-medium text-carbon transition-transform hover:-translate-y-0.5 sm:inline-flex"
             >
               {t.book} <ArrowUpRight className="h-3.5 w-3.5" />
@@ -193,7 +217,7 @@ export function PublicOmakaseLanding() {
         >
           <img
             src="/asocial-omakase-hero.webp"
-            alt="Experiencia de café omakase en una barra de madera"
+            alt={t.heroAlt}
             className="absolute inset-0 h-full w-full object-cover object-[58%_center]"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/15" />
@@ -210,6 +234,7 @@ export function PublicOmakaseLanding() {
             <div className="mt-9 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
               <a
                 href={bookingUrl}
+                onClick={() => trackReservationClick("hero")}
                 className="inline-flex items-center gap-2 rounded-full bg-lino px-6 py-3.5 text-sm font-medium text-carbon transition-transform hover:-translate-y-0.5"
               >
                 {t.reserveExperience} <ArrowUpRight className="h-4 w-4" />
@@ -290,6 +315,7 @@ export function PublicOmakaseLanding() {
               </div>
               <a
                 href={bookingUrl}
+                onClick={() => trackReservationClick("details")}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-carbon px-6 py-3.5 text-sm font-medium text-lino transition-transform hover:-translate-y-0.5"
               >
                 {t.reserveExperience} <ArrowUpRight className="h-4 w-4" />
@@ -307,6 +333,7 @@ export function PublicOmakaseLanding() {
             <p className="mx-auto mt-6 max-w-lg text-sm leading-7 text-lino/65">{t.ctaBody}</p>
             <a
               href={bookingUrl}
+              onClick={() => trackReservationClick("closing")}
               className="mt-9 inline-flex items-center gap-2 rounded-full bg-lino px-7 py-3.5 text-sm font-medium text-carbon transition-transform hover:-translate-y-0.5"
             >
               {t.reserveExperience} <ArrowUpRight className="h-4 w-4" />
@@ -324,6 +351,7 @@ export function PublicOmakaseLanding() {
                 href="https://wa.me/51919112980"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackContactClick("whatsapp")}
                 className="inline-flex items-center gap-1.5 text-xs text-lino/60 transition-colors hover:text-lino"
               >
                 <Phone className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -334,6 +362,7 @@ export function PublicOmakaseLanding() {
                 href="https://www.instagram.com/omakase.cafe/"
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => trackContactClick("instagram")}
                 className="inline-flex items-center gap-1.5 text-xs text-lino/60 transition-colors hover:text-lino"
               >
                 <Instagram className="h-3.5 w-3.5" strokeWidth={1.5} />
