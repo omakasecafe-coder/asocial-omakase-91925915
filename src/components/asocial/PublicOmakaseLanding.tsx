@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, ArrowUpRight, Clock, MapPin, Users } from "lucide-react";
+import { ArrowDown, ArrowUpRight, Clock, Instagram, MapPin, Phone, Users } from "lucide-react";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 
 type Language = "es" | "en";
@@ -319,7 +319,28 @@ export function PublicOmakaseLanding() {
         <div className="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-9 w-auto self-start" />
           <div className="text-left sm:text-right">
-            <p className="text-sm text-lino/75">{t.footer}</p>
+            <div className="flex items-center gap-4 sm:justify-end">
+              <a
+                href="https://wa.me/51919112980"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-lino/60 transition-colors hover:text-lino"
+              >
+                <Phone className="h-3.5 w-3.5" strokeWidth={1.5} />
+                WhatsApp
+              </a>
+              <span className="text-lino/20">·</span>
+              <a
+                href="https://www.instagram.com/omakase.cafe/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs text-lino/60 transition-colors hover:text-lino"
+              >
+                <Instagram className="h-3.5 w-3.5" strokeWidth={1.5} />
+                Instagram
+              </a>
+            </div>
+            <p className="mt-5 text-sm text-lino/75">{t.footer}</p>
             <p className="mt-2 text-[11px] text-lino/35">Barranco · Lima</p>
           </div>
         </div>
