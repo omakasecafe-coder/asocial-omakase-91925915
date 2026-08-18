@@ -15,7 +15,16 @@ import bgLino from "@/assets/background-lino.png.asset.json";
 import bgCarbon from "@/assets/background-carbon.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
 import { createPublicReservation, type PublicSession } from "@/lib/public.functions";
-import { hour, money, relativeDay, longDay } from "@/lib/format";
+import { money } from "@/lib/format";
+import {
+  bookingCopy,
+  hourI18n,
+  longDayI18n,
+  parseLang,
+  relativeDayI18n,
+  seatsLabelI18n,
+  type Lang,
+} from "@/lib/booking-i18n";
 import { identifyTikTokUser, trackEvent, trackMetaEvent, trackTikTokEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
@@ -51,8 +60,10 @@ function tiktokSessionEventParams(session: PublicSession, guests = 1) {
   };
 }
 
-export function BookingExperience() {
+export function BookingExperience({ lang: langProp }: { lang?: string } = {}) {
   const queryClient = useQueryClient();
+  const lang: Lang = parseLang(langProp);
+  const t = bookingCopy[lang];
   const { data: sessions = [], isLoading } = useQuery(publicSessionsQuery());
 
   const [step, setStep] = useState<Step>(1);
@@ -78,6 +89,10 @@ export function BookingExperience() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [step]);
 
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const clearFormError = (key: keyof ContactErrors) => {
     setFormErrors((current) => {
       if (!current[key]) return current;
@@ -91,13 +106,13 @@ export function BookingExperience() {
     const errors: ContactErrors = {};
     const email = form.email.trim();
 
-    if (!form.firstName.trim()) errors.firstName = "Cuéntanos tu nombre.";
+    if (!form.firstName.trim()) errors.firstName = t.errFirstName;
     if (!email) {
-      errors.email = "Necesitamos tu email para enviarte los medios de pago.";
+      errors.email = t.errEmailRequired;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      errors.email = "Revisa que el email esté bien escrito.";
+      errors.email = t.errEmailInvalid;
     }
-    if (form.phone.trim().length < 6) errors.phone = "Necesitamos tu WhatsApp para coordinar la confirmación.";
+    if (form.phone.trim().length < 6) errors.phone = t.errPhone;
 
     setFormErrors(errors);
 
@@ -135,7 +150,7 @@ export function BookingExperience() {
         value: result.total,
         currency: "PEN",
         status: "payment_pending",
-        items: selected ? [{ item_id: selected.id, item_name: longDay(selected.fecha), quantity: guests }] : [],
+        items: selected ? [{ item_id: selected.id, item_name: longDayI18n(selected.fecha, lang), quantity: guests }] : [],
       });
       if (selected) {
         trackMetaEvent("Schedule", {
@@ -160,7 +175,7 @@ export function BookingExperience() {
     },
     onError: (error) => {
       trackEvent("reservation_error", { message: error instanceof Error ? error.message : "unknown" });
-      toast(error instanceof Error ? error.message : "No pudimos guardar tu reserva");
+      toast(error instanceof Error ? error.message : t.errSave);
     },
 
   });
@@ -184,30 +199,31 @@ export function BookingExperience() {
         <div className="mx-auto max-w-2xl">
           <img src={logoLight.url} alt="asocial · café omakase" className="h-11 w-auto drop-shadow-lg md:h-[3.25rem]" />
 
-          <p className="mt-4 text-sm font-medium leading-snug text-lino drop-shadow-md md:text-base">
-            Una experiencia guiada para descubrir el café con calma.
-          </p>
+          <div className="mt-4 flex items-start justify-between gap-4">
+            <p className="max-w-md text-sm font-medium leading-snug text-lino drop-shadow-md md:text-base">
+              {t.tagline}
+            </p>
+            <LanguageSwitch current={lang} />
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-2xl px-5 py-8 md:px-10 md:py-12">
-        {step < 4 ? <BookingStepper step={step} className="mb-8" /> : null}
+        {step < 4 ? <BookingStepper step={step} labels={t.steps} className="mb-8" /> : null}
 
         {step === 1 ? (
           <section>
-            <h1 className="text-lg font-medium">Reserva tu sesión de café omakase</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Elige el horario que prefieras.</p>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-              Luego registras tus datos y te enviamos los medios de pago para confirmar tu lugar.
-            </p>
+            <h1 className="text-lg font-medium">{t.title}</h1>
+            <p className="mt-1 text-sm text-muted-foreground">{t.subtitle}</p>
+            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{t.intro}</p>
 
             <div className="mt-6 space-y-3">
               {isLoading ? (
-                <p className="text-sm text-muted-foreground">Preparando las sesiones…</p>
+                <p className="text-sm text-muted-foreground">{t.loading}</p>
               ) : sessions.length === 0 ? (
                 <EmptyState
-                  title="No hay sesiones abiertas por ahora."
-                  description="Publicamos nuevas fechas cada semana."
+                  title={t.emptyTitle}
+                  description={t.emptyDescription}
                 />
               ) : (
                 sessions.map((session) => {
@@ -238,16 +254,16 @@ export function BookingExperience() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                            {relativeDay(session.fecha)}
+                            {relativeDayI18n(session.fecha, lang)}
                           </p>
-                          <p className="mt-0.5 text-lg font-medium leading-tight">{hour(session.hora_inicio)}</p>
+                          <p className="mt-0.5 text-lg font-medium leading-tight">{hourI18n(session.hora_inicio, lang)}</p>
                           {session.descripcion_publica ? (
                             <p className="mt-1 line-clamp-1 text-xs leading-relaxed text-muted-foreground">
                               {session.descripcion_publica}
                             </p>
                           ) : null}
                         </div>
-                        <AvailabilityBadge available={session.available} />
+                        <AvailabilityBadge available={session.available} label={seatsLabelI18n(session.available, lang)} />
                       </div>
                       <Button
                         className="mt-3 w-full rounded-xl"
@@ -257,7 +273,7 @@ export function BookingExperience() {
                           open();
                         }}
                       >
-                        {full ? "Agotado" : "Reservar"}
+                        {full ? t.soldOut : t.reserve}
                       </Button>
                     </div>
                   );
@@ -266,29 +282,23 @@ export function BookingExperience() {
             </div>
 
             <section className="mt-10 border-t border-border/70 pt-8">
-              <h2 className="text-base font-medium">Café omakase en Lima, con ritmo pausado.</h2>
+              <h2 className="text-base font-medium">{t.aboutTitle}</h2>
               <div className="mt-4 space-y-4 text-sm leading-relaxed text-muted-foreground">
-                <p>
-                  asocial café omakase es una experiencia privada de café de especialidad en formato barra guiada.
-                  Cada sesión reúne pocos lugares para explorar métodos, aromas y conversaciones alrededor del café.
-                </p>
-                <p>
-                  La reserva queda registrada con pago por confirmar. Te enviamos los medios disponibles por correo y,
-                  cuando validamos tu comprobante por WhatsApp o email, recibes la confirmación final de tu sesión.
-                </p>
+                <p>{t.aboutP1}</p>
+                <p>{t.aboutP2}</p>
               </div>
               <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Formato</dt>
-                  <dd className="mt-1 text-foreground">Experiencia guiada</dd>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t.formatLabel}</dt>
+                  <dd className="mt-1 text-foreground">{t.formatValue}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Cupos</dt>
-                  <dd className="mt-1 text-foreground">Limitados por sesión</dd>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t.seatsLabel}</dt>
+                  <dd className="mt-1 text-foreground">{t.seatsValue}</dd>
                 </div>
                 <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">Reserva</dt>
-                  <dd className="mt-1 text-foreground">Pago por confirmar</dd>
+                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">{t.bookingLabel}</dt>
+                  <dd className="mt-1 text-foreground">{t.bookingValue}</dd>
                 </div>
               </dl>
             </section>
@@ -297,11 +307,11 @@ export function BookingExperience() {
 
         {step === 2 && selected ? (
           <section className="card-soft bg-card/85 p-6 md:p-8">
-            <h2 className="text-xl font-medium">Cuéntanos quién viene</h2>
-            <SessionSummary session={selected} />
+            <h2 className="text-xl font-medium">{t.whoTitle}</h2>
+            <SessionSummary session={selected} lang={lang} />
 
             <div className="mt-8 space-y-4">
-              <Field label="Número de personas">
+              <Field label={t.guestsLabel}>
                 <div className="flex flex-wrap gap-2">
                   {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => {
                     const disabled = n > selected.available;
@@ -327,7 +337,7 @@ export function BookingExperience() {
               </Field>
 
               <div className="grid gap-4">
-                <Field label="Nombre" fieldKey="firstName" error={formErrors.firstName}>
+                <Field label={t.firstName} fieldKey="firstName" error={formErrors.firstName}>
                   <Input
                     value={form.firstName}
                     onChange={(e) => {
@@ -337,14 +347,14 @@ export function BookingExperience() {
                     className="bg-card"
                   />
                 </Field>
-                <Field label="Apellido">
+                <Field label={t.lastName}>
                   <Input
                     value={form.lastName}
                     onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                     className="bg-card"
                   />
                 </Field>
-                <Field label="Email" fieldKey="email" error={formErrors.email}>
+                <Field label={t.email} fieldKey="email" error={formErrors.email}>
                   <Input
                     type="email"
                     value={form.email}
@@ -362,20 +372,20 @@ export function BookingExperience() {
                       setForm({ ...form, phone });
                       clearFormError("phone");
                     }}
-                    placeholder="Número de celular"
+                    placeholder={t.phonePlaceholder}
                   />
                   {formErrors.phone ? <FieldError>{formErrors.phone}</FieldError> : null}
                 </div>
               </div>
 
-              <Field label="Alergias o restricciones (opcional)">
+              <Field label={t.dietary}>
                 <Textarea
                   value={form.dietary}
                   onChange={(e) => setForm({ ...form, dietary: e.target.value })}
                   className="min-h-20 bg-card"
                 />
               </Field>
-              <Field label="Comentarios (opcional)">
+              <Field label={t.notes}>
                 <Textarea
                   value={form.notes}
                   onChange={(e) => setForm({ ...form, notes: e.target.value })}
@@ -388,7 +398,7 @@ export function BookingExperience() {
               <Button
                 onClick={() => {
                   if (!validateContact()) {
-                    toast("Revisa los datos marcados.");
+                    toast(t.errReview);
                     return;
                   }
                   trackEvent("begin_checkout", { guests, value: total, currency: "PEN" });
@@ -412,10 +422,10 @@ export function BookingExperience() {
                   setStep(3);
                 }}
               >
-                Continuar
+                {t.continue}
               </Button>
               <Button variant="ghost" onClick={() => setStep(1)}>
-                Volver
+                {t.back}
               </Button>
             </div>
           </section>
@@ -423,20 +433,20 @@ export function BookingExperience() {
 
         {step === 3 && selected ? (
           <section>
-            <h2 className="text-xl font-medium">Revisa tu reserva</h2>
+            <h2 className="text-xl font-medium">{t.reviewTitle}</h2>
             <div className="card-soft mt-6 divide-y divide-border">
-              <Row label="Fecha" value={longDay(selected.fecha)} />
-              <Row label="Hora" value={hour(selected.hora_inicio)} />
-              <Row label="Personas" value={String(guests)} />
-              <Row label="Precio por persona" value={money(selected.precio_por_persona)} />
-              <Row label="Estado de pago" value="Pago por confirmar" strong />
+              <Row label={t.date} value={longDayI18n(selected.fecha, lang)} />
+              <Row label={t.time} value={hourI18n(selected.hora_inicio, lang)} />
+              <Row label={t.people} value={String(guests)} />
+              <Row label={t.pricePerPerson} value={money(selected.precio_por_persona)} />
+              <Row label={t.paymentStatus} value={t.paymentPending} strong />
               <div className="rounded-lg bg-musgo/15 px-5 py-3.5">
-                <Row label="Total" value={money(total)} strong />
+                <Row label={t.total} value={money(total)} strong />
               </div>
             </div>
             <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              Tu reserva quedará pendiente hasta que validemos el pago. Te enviaremos los medios disponibles por correo.
+              {t.pendingNote}
             </p>
             <div className="mt-8 flex gap-2">
               <Button
@@ -449,10 +459,10 @@ export function BookingExperience() {
                 }}
                 disabled={reserve.isPending}
               >
-                {reserve.isPending ? "Solicitando…" : "Solicitar reserva"}
+                {reserve.isPending ? t.requesting : t.requestCta}
               </Button>
               <Button variant="ghost" onClick={() => setStep(2)}>
-                Volver
+                {t.back}
               </Button>
             </div>
           </section>
@@ -460,18 +470,18 @@ export function BookingExperience() {
 
         {step === 4 && confirmation && selected ? (
           <section className="animate-in fade-in duration-200">
-            <h2 className="text-xl font-medium">Tu lugar está reservado</h2>
+            <h2 className="text-xl font-medium">{t.confirmedTitle}</h2>
             <div className="card-soft mt-6 divide-y divide-border">
-              <Row label="Código" value={confirmation.code} strong />
-              <Row label="Fecha" value={longDay(selected.fecha)} />
-              <Row label="Hora" value={hour(selected.hora_inicio)} />
-              <Row label="Personas" value={String(guests)} />
-              <Row label="Total" value={money(confirmation.total)} />
-              <Row label="Estado de pago" value="Pago por confirmar" strong />
+              <Row label={t.code} value={confirmation.code} strong />
+              <Row label={t.date} value={longDayI18n(selected.fecha, lang)} />
+              <Row label={t.time} value={hourI18n(selected.hora_inicio, lang)} />
+              <Row label={t.people} value={String(guests)} />
+              <Row label={t.total} value={money(confirmation.total)} />
+              <Row label={t.paymentStatus} value={t.paymentPending} strong />
             </div>
             <p className="mt-6 flex items-start gap-2 text-sm font-semibold leading-relaxed text-foreground">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              Te enviamos un correo con el resumen de tu solicitud de reserva; así como los medios de pago disponibles. Envíanos el comprobante al WhatsApp +51 919 112 980 y tu reserva quedará confirmada.
+              {t.confirmedNote}
             </p>
           </section>
         ) : null}
@@ -499,20 +509,47 @@ export function BookingExperience() {
             Instagram
           </a>
         </div>
-        <p className="mt-3">menos ruido, más café.</p>
+        <p className="mt-3">{t.footerTagline}</p>
       </footer>
     </div>
   );
 }
 
-function SessionSummary({ session }: { session: PublicSession }) {
+function LanguageSwitch({ current }: { current: Lang }) {
+  const setLang = (next: Lang) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("lang", next);
+    window.history.replaceState({}, "", url.toString());
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+  return (
+    <div className="flex shrink-0 rounded-full border border-lino/25 p-0.5 text-[10px] tracking-[0.14em]">
+      {(["es", "en"] as const).map((item) => (
+        <button
+          key={item}
+          type="button"
+          onClick={() => setLang(item)}
+          aria-pressed={current === item}
+          className={cn(
+            "rounded-full px-2.5 py-1.5 transition-colors duration-200",
+            current === item ? "bg-lino text-carbon" : "text-lino/70 hover:text-lino",
+          )}
+        >
+          {item.toUpperCase()}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function SessionSummary({ session, lang }: { session: PublicSession; lang: Lang }) {
   return (
     <div className="card-soft mt-6 flex items-center justify-between gap-4 px-5 py-4">
       <div>
-        <p className="text-sm">{relativeDay(session.fecha)}</p>
-        <p className="mt-0.5 text-base font-medium">{hour(session.hora_inicio)}</p>
+        <p className="text-sm">{relativeDayI18n(session.fecha, lang)}</p>
+        <p className="mt-0.5 text-base font-medium">{hourI18n(session.hora_inicio, lang)}</p>
       </div>
-      <AvailabilityBadge available={session.available} />
+      <AvailabilityBadge available={session.available} label={seatsLabelI18n(session.available, lang)} />
     </div>
   );
 }
