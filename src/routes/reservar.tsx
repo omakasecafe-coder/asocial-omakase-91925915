@@ -28,6 +28,8 @@ const structuredData = {
 };
 
 export const Route = createFileRoute("/reservar")({
+  validateSearch: (search: Record<string, unknown>): { lang?: string } =>
+    typeof search["lang"] === "string" ? { lang: search["lang"] } : {},
   head: () => ({
     meta: [
       { title },
@@ -44,5 +46,10 @@ export const Route = createFileRoute("/reservar")({
       },
     ],
   }),
-  component: BookingExperience,
+  component: ReservarPage,
 });
+
+function ReservarPage() {
+  const { lang } = Route.useSearch();
+  return <BookingExperience lang={lang} />;
+}

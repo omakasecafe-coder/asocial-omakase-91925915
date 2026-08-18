@@ -1,7 +1,15 @@
 import { cn } from "@/lib/utils";
 
-export function BookingStepper({ step, className }: { step: 1 | 2 | 3 | 4; className?: string }) {
-  const steps = ["Sesión", "Asistentes", "Resumen"];
+export function BookingStepper({
+  step,
+  className,
+  labels,
+}: {
+  step: 1 | 2 | 3 | 4;
+  className?: string;
+  labels?: readonly string[];
+}) {
+  const steps = labels ?? ["Sesión", "Asistentes", "Resumen"];
   return (
     <div className={cn("flex items-center gap-3", className)}>
       {steps.map((label, index) => {

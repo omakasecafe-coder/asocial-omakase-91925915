@@ -65,10 +65,10 @@ export const Route = createFileRoute("/")({
 
 function HomePage() {
   const hostname = Route.useLoaderData();
-  const { view } = Route.useSearch();
+  const { view, lang } = Route.useSearch();
   return isPublicSiteHost(hostname) || view === "public" ? (
     <PublicOmakaseLanding />
   ) : (
-    <BookingExperience />
+    <BookingExperience lang={lang} />
   );
 }
