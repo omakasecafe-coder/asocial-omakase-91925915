@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, Instagram, Phone } from "lucide-react";
+import { AlertTriangle, BadgePercent, CheckCircle2, Instagram, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +14,12 @@ import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 import bgLino from "@/assets/background-lino.png.asset.json";
 import bgCarbon from "@/assets/background-carbon.png.asset.json";
 import { publicSessionsQuery } from "@/lib/queries";
-import { createPublicReservation, type PublicSession } from "@/lib/public.functions";
+import {
+  createPublicReservation,
+  getPublicPriceQuote,
+  type PublicPriceQuote,
+  type PublicSession,
+} from "@/lib/public.functions";
 import { money } from "@/lib/format";
 import {
   bookingCopy,
@@ -89,12 +94,78 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
     notes: "",
   });
   const [formErrors, setFormErrors] = useState<ContactErrors>({});
-  const [confirmation, setConfirmation] = useState<{ code: string; total: number } | null>(null);
+  const [confirmation, setConfirmation] = useState<{
+    code: string;
+    subtotal: number;
+    discount: number;
+    total: number;
+    promotionName: string | null;
+    promotionCode: string | null;
+    complimentary: boolean;
+  } | null>(null);
+  const [promoInput, setPromoInput] = useState("");
+  const [appliedCode, setAppliedCode] = useState("");
+  const [priceQuote, setPriceQuote] = useState<PublicPriceQuote | null>(null);
+  const [promotionError, setPromotionError] = useState("");
+  const [quoteLoading, setQuoteLoading] = useState(false);
 
-  const total = useMemo(
+  const subtotal = useMemo(
     () => (selected ? Number(selected.precio_por_persona) * guests : 0),
     [selected, guests],
   );
+
+  const quoteRequest = (code: string) =>
+    getPublicPriceQuote({
+      data: {
+        sessionId: selected!.id,
+        guestCount: guests,
+        promoCode: code,
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+      },
+    });
+
+  useEffect(() => {
+    if (step !== 3 || !selected) return;
+    let current = true;
+    setQuoteLoading(true);
+    setPromotionError("");
+    void quoteRequest(appliedCode)
+      .then((quote) => {
+        if (current) setPriceQuote(quote);
+      })
+      .catch((error) => {
+        if (current) setPromotionError(error instanceof Error ? error.message : t.errPromotion);
+      })
+      .finally(() => {
+        if (current) setQuoteLoading(false);
+      });
+    return () => {
+      current = false;
+    };
+    // The quote only changes when the booking inputs or applied code change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, selected?.id, guests, appliedCode, form.email, form.phone]);
+
+  const applyPromotion = useMutation({
+    mutationFn: (code: string) => quoteRequest(code),
+    onSuccess: (quote, code) => {
+      setAppliedCode(code);
+      setPriceQuote(quote);
+      setPromotionError("");
+      trackEvent("coupon_apply", {
+        coupon: quote.promotionCode ?? code,
+        promotion_name: quote.promotionName,
+        discount: quote.discount,
+        value: quote.total,
+        currency: "PEN",
+      });
+    },
+    onError: (error) => {
+      setPromotionError(error instanceof Error ? error.message : t.errPromotion);
+      trackEvent("coupon_error", { coupon: promoInput.trim().toUpperCase() });
+    },
+  });
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -151,16 +222,28 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
           guestCount: guests,
           dietary: form.dietary.trim(),
           notes: form.notes.trim(),
+          promoCode: appliedCode,
         },
       }),
     onSuccess: (result) => {
-      setConfirmation({ code: result.bookingCode, total: result.total });
+      setConfirmation({
+        code: result.bookingCode,
+        subtotal: result.subtotal,
+        discount: result.discount,
+        total: result.total,
+        promotionName: result.promotionName,
+        promotionCode: result.promotionCode,
+        complimentary: result.isComplimentary,
+      });
       setStep(4);
       trackEvent("reservation_created", {
         reservation_id: result.bookingCode,
         value: result.total,
         currency: "PEN",
-        status: "payment_pending",
+        status: result.isComplimentary ? "confirmed" : "payment_pending",
+        coupon: result.promotionCode,
+        promotion_name: result.promotionName,
+        discount: result.discount,
         language: lang,
         items: selected ? analyticsItems(selected, guests) : [],
       });
@@ -168,15 +251,18 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
         value: result.total,
         currency: "PEN",
         lead_source: "website_reservation",
-        status: "payment_pending",
+        status: result.isComplimentary ? "confirmed" : "payment_pending",
+        coupon: result.promotionCode,
+        discount: result.discount,
         language: lang,
         items: selected ? analyticsItems(selected, guests) : [],
       });
       if (selected) {
         trackMetaEvent("Schedule", {
           ...sessionEventParams(selected, guests),
+          value: result.total,
           order_id: result.bookingCode,
-          status: "payment_pending",
+          status: result.isComplimentary ? "confirmed" : "payment_pending",
         });
         void (async () => {
           await identifyTikTokUser({
@@ -186,8 +272,9 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
           });
           trackTikTokEvent("CompleteRegistration", {
             ...tiktokSessionEventParams(selected, guests),
+            value: result.total,
             order_id: result.bookingCode,
-            status: "payment_pending",
+            status: result.isComplimentary ? "confirmed" : "payment_pending",
           });
         })();
       }
@@ -437,7 +524,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                   }
                   trackEvent("begin_checkout", {
                     guests,
-                    value: total,
+                    value: subtotal,
                     currency: "PEN",
                     language: lang,
                     items: analyticsItems(selected, guests),
@@ -449,7 +536,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                       : {
                           currency: "PEN",
                           num_items: guests,
-                          value: total,
+                          value: subtotal,
                         },
                   );
                   void (async () => {
@@ -479,14 +566,86 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
               <Row label={t.time} value={hourI18n(selected.hora_inicio, lang)} />
               <Row label={t.people} value={String(guests)} />
               <Row label={t.pricePerPerson} value={money(selected.precio_por_persona)} />
-              <Row label={t.paymentStatus} value={t.paymentPending} strong />
+              <Row label={t.subtotal} value={money(priceQuote?.subtotal ?? subtotal)} />
+              {priceQuote?.promotionName ? (
+                <div className="bg-musgo/10 px-5 py-3.5">
+                  <div className="flex items-start gap-2">
+                    <BadgePercent
+                      className="mt-0.5 h-4 w-4 shrink-0 text-musgo"
+                      strokeWidth={1.5}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium">{priceQuote.promotionName}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {priceQuote.promotionApplicationType === "automatic"
+                          ? t.automaticPromotion
+                          : `${t.codeApplied}${priceQuote.promotionCode ? `: ${priceQuote.promotionCode}` : ""}`}
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-musgo">
+                      −{money(priceQuote.discount)}
+                    </span>
+                  </div>
+                </div>
+              ) : null}
+              <Row
+                label={t.paymentStatus}
+                value={(priceQuote?.total ?? subtotal) === 0 ? t.complimentary : t.paymentPending}
+                strong
+              />
               <div className="rounded-lg bg-musgo/15 px-5 py-3.5">
-                <Row label={t.total} value={money(total)} strong />
+                <Row label={t.total} value={money(priceQuote?.total ?? subtotal)} strong />
               </div>
             </div>
+
+            <div className="mt-4 rounded-xl border border-border bg-card/70 p-4">
+              <Label htmlFor="promo-code" className="text-xs text-muted-foreground">
+                {t.promoCode}
+              </Label>
+              <div className="mt-2 flex gap-2">
+                <Input
+                  id="promo-code"
+                  value={promoInput}
+                  onChange={(event) => {
+                    setPromoInput(event.target.value.toUpperCase());
+                    setPromotionError("");
+                  }}
+                  placeholder={t.promoPlaceholder}
+                  disabled={applyPromotion.isPending}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={!promoInput.trim() || applyPromotion.isPending}
+                  onClick={() => applyPromotion.mutate(promoInput.trim().toUpperCase())}
+                >
+                  {applyPromotion.isPending ? t.applying : t.apply}
+                </Button>
+              </div>
+              {promotionError ? (
+                <p className="mt-2 text-xs font-medium text-arcilla">{promotionError}</p>
+              ) : null}
+              {appliedCode ? (
+                <button
+                  type="button"
+                  className="mt-2 text-xs text-muted-foreground underline underline-offset-4"
+                  onClick={() => {
+                    setAppliedCode("");
+                    setPromoInput("");
+                    setPromotionError("");
+                  }}
+                >
+                  {t.removeCode}
+                </button>
+              ) : null}
+            </div>
             <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              {t.pendingNote}
+              {(priceQuote?.total ?? subtotal) === 0 ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-musgo" />
+              ) : (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              )}
+              {(priceQuote?.total ?? subtotal) === 0 ? t.complimentaryNote : t.pendingNote}
             </p>
             <div className="mt-8 flex gap-2">
               <Button
@@ -497,9 +656,13 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                   });
                   reserve.mutate();
                 }}
-                disabled={reserve.isPending}
+                disabled={reserve.isPending || quoteLoading}
               >
-                {reserve.isPending ? t.requesting : t.requestCta}
+                {reserve.isPending
+                  ? t.requesting
+                  : (priceQuote?.total ?? subtotal) === 0
+                    ? t.confirmFreeCta
+                    : t.requestCta}
               </Button>
               <Button variant="ghost" onClick={() => setStep(2)}>
                 {t.back}
@@ -516,12 +679,29 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
               <Row label={t.date} value={longDayI18n(selected.fecha, lang)} />
               <Row label={t.time} value={hourI18n(selected.hora_inicio, lang)} />
               <Row label={t.people} value={String(guests)} />
+              {confirmation.promotionName ? (
+                <Row
+                  label={t.promotion}
+                  value={`${confirmation.promotionName}${confirmation.promotionCode ? ` · ${confirmation.promotionCode}` : ""}`}
+                />
+              ) : null}
+              {confirmation.discount > 0 ? (
+                <Row label={t.discount} value={`−${money(confirmation.discount)}`} />
+              ) : null}
               <Row label={t.total} value={money(confirmation.total)} />
-              <Row label={t.paymentStatus} value={t.paymentPending} strong />
+              <Row
+                label={t.paymentStatus}
+                value={confirmation.complimentary ? t.complimentary : t.paymentPending}
+                strong
+              />
             </div>
             <p className="mt-6 flex items-start gap-2 text-sm font-semibold leading-relaxed text-foreground">
-              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              {t.confirmedNote}
+              {confirmation.complimentary ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-musgo" />
+              ) : (
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+              )}
+              {confirmation.complimentary ? t.complimentaryConfirmedNote : t.confirmedNote}
             </p>
           </section>
         ) : null}

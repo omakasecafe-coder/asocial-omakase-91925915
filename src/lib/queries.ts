@@ -1,5 +1,11 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getWorkspace, getSettings, getEmailTemplates, listStaffUsers, getMyAccess } from "@/lib/admin.functions";
+import {
+  getWorkspace,
+  getSettings,
+  getEmailTemplates,
+  listStaffUsers,
+  getMyAccess,
+} from "@/lib/admin.functions";
 import { getPublicSessions } from "@/lib/public.functions";
 
 export const workspaceQuery = () =>
@@ -46,4 +52,6 @@ export type CustomerRow = Workspace["customers"][number];
 export type PaymentRow = Workspace["payments"][number];
 export type BlockRow = Workspace["blocks"][number];
 export type RefundRow = Workspace["refunds"][number];
+export type PromotionRow = Workspace["promotions"][number];
+export type PromotionRedemptionRow = Workspace["promotionRedemptions"][number];
 export type EmailTemplateRow = Awaited<ReturnType<typeof getEmailTemplates>>[number];

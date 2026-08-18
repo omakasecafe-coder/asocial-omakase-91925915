@@ -20,6 +20,7 @@ import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authen
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPagosRouteImport } from './routes/_authenticated/pagos'
 import { Route as AuthenticatedProbarCorreoRouteImport } from './routes/_authenticated/probar-correo'
+import { Route as AuthenticatedPromocionesRouteImport } from './routes/_authenticated/promociones'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
@@ -86,6 +87,12 @@ const AuthenticatedProbarCorreoRoute =
     path: '/probar-correo',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPromocionesRoute =
+  AuthenticatedPromocionesRouteImport.update({
+    id: '/promociones',
+    path: '/promociones',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
   id: '/reportes',
   path: '/reportes',
@@ -146,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/pagos': typeof AuthenticatedPagosRoute
   '/probar-correo': typeof AuthenticatedProbarCorreoRoute
+  '/promociones': typeof AuthenticatedPromocionesRoute
   '/reportes': typeof AuthenticatedReportesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -167,6 +175,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/pagos': typeof AuthenticatedPagosRoute
   '/probar-correo': typeof AuthenticatedProbarCorreoRoute
+  '/promociones': typeof AuthenticatedPromocionesRoute
   '/reportes': typeof AuthenticatedReportesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -190,6 +199,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/pagos': typeof AuthenticatedPagosRoute
   '/_authenticated/probar-correo': typeof AuthenticatedProbarCorreoRoute
+  '/_authenticated/promociones': typeof AuthenticatedPromocionesRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -213,6 +223,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/pagos'
     | '/probar-correo'
+    | '/promociones'
     | '/reportes'
     | '/usuarios'
     | '/clientes/$id'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/pagos'
     | '/probar-correo'
+    | '/promociones'
     | '/reportes'
     | '/usuarios'
     | '/clientes/$id'
@@ -256,6 +268,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/pagos'
     | '/_authenticated/probar-correo'
+    | '/_authenticated/promociones'
     | '/_authenticated/reportes'
     | '/_authenticated/usuarios'
     | '/_authenticated/clientes/$id'
@@ -357,6 +370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProbarCorreoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/promociones': {
+      id: '/_authenticated/promociones'
+      path: '/promociones'
+      fullPath: '/promociones'
+      preLoaderRoute: typeof AuthenticatedPromocionesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reportes': {
       id: '/_authenticated/reportes'
       path: '/reportes'
@@ -429,6 +449,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPagosRoute: typeof AuthenticatedPagosRoute
   AuthenticatedProbarCorreoRoute: typeof AuthenticatedProbarCorreoRoute
+  AuthenticatedPromocionesRoute: typeof AuthenticatedPromocionesRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedClientesIdRoute: typeof AuthenticatedClientesIdRoute
@@ -444,6 +465,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPagosRoute: AuthenticatedPagosRoute,
   AuthenticatedProbarCorreoRoute: AuthenticatedProbarCorreoRoute,
+  AuthenticatedPromocionesRoute: AuthenticatedPromocionesRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedClientesIdRoute: AuthenticatedClientesIdRoute,

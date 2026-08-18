@@ -5,6 +5,7 @@ export const APP_MODULES = [
   { key: "reservas", label: "Reservas", to: "/reservas" },
   { key: "clientes", label: "Clientes", to: "/clientes" },
   { key: "pagos", label: "Pagos", to: "/pagos" },
+  { key: "promociones", label: "Promociones", to: "/promociones" },
   { key: "reportes", label: "Reportes", to: "/reportes" },
   { key: "usuarios", label: "Usuarios", to: "/usuarios" },
   { key: "configuracion", label: "Configuración", to: "/configuracion" },

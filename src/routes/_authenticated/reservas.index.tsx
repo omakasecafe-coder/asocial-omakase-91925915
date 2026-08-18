@@ -12,8 +12,19 @@ import { ReservationDialog } from "@/components/asocial/ReservationDialog";
 import { PaymentDialog } from "@/components/asocial/PaymentDialog";
 import { EditReservationDialog } from "@/components/asocial/EditReservationDialog";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { workspaceQuery, settingsQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay, stamp } from "@/lib/format";
@@ -77,7 +88,10 @@ function ReservationsPage() {
 
   const groups = useMemo(() => {
     if (!ws) return [] as { key: string; title: string; guests: number; items: typeof rows }[];
-    const map = new Map<string, { key: string; title: string; sort: string; guests: number; items: typeof rows }>();
+    const map = new Map<
+      string,
+      { key: string; title: string; sort: string; guests: number; items: typeof rows }
+    >();
     for (const r of rows) {
       const s = ws.sessions.find((x) => x.id === r.session_id);
       const key = r.session_id ?? "sin-sesion";
@@ -103,7 +117,12 @@ function ReservationsPage() {
       }
     >
       <div className="flex flex-wrap gap-3">
-        <SearchInput value={q} onChange={setQ} placeholder="Nombre o código" className="w-full sm:w-64" />
+        <SearchInput
+          value={q}
+          onChange={setQ}
+          placeholder="Nombre o código"
+          className="w-full sm:w-64"
+        />
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="h-9 w-44 rounded-full">
             <SelectValue />
@@ -117,7 +136,6 @@ function ReservationsPage() {
             ))}
           </SelectContent>
         </Select>
-
       </div>
 
       <div className="mt-6">
@@ -125,126 +143,142 @@ function ReservationsPage() {
           <EmptyState title="Sin reservas que coincidan." />
         ) : (
           <Accordion type="multiple" defaultValue={groups.map((g) => g.key)} className="space-y-3">
-          {groups.map((g) => (
-            <AccordionItem key={g.key} value={g.key} className="card-soft border-0 px-4">
-              <AccordionTrigger className="py-4 hover:no-underline">
-                <div className="flex w-full flex-wrap items-center justify-between gap-2 pr-2 text-left">
-                  <span className="text-sm">{g.title}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {g.items.length} {g.items.length === 1 ? "reserva" : "reservas"} · {g.guests}p
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="space-y-3 pb-4">
-          {g.items.map((r) => {
-            const s = ws.sessions.find((x) => x.id === r.session_id);
-            const paid = paidAmount(ws, r.id);
-            const pending = Number(r.total) - paid;
-            const customer = ws.customers.find((c) => c.id === r.customer_id);
-            const handleWhatsApp = () => {
-              openWhatsApp(
-                customer?.phone,
-                renderWhatsappMessage(
-                  (settings as { whatsapp_message_template?: string } | undefined)?.whatsapp_message_template ?? "",
-                  {
-                    customer_name: customerName(ws, r.customer_id),
-                    booking_code: r.booking_code,
-                    session_date: s ? longDay(s.fecha) : "",
-                    session_time: s ? hour(s.hora_inicio) : "",
-                    guest_count: String(r.guest_count),
-                    total: money(r.total),
-                    pending_amount: money(Math.max(pending, 0)),
-                    payment_options: settings?.payment_instructions ?? "",
-                    business_name: settings?.business_name ?? "asocial",
-                  },
-                ),
-              );
-            };
-            return (
-              <div key={r.id} className="card-soft p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <Link
-                      to="/clientes/$id"
-                      params={{ id: r.customer_id }}
-                      className="text-sm underline-offset-4 hover:underline"
-                    >
-                      {customerName(ws, r.customer_id)}
-                    </Link>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {r.booking_code} · {s ? `${longDay(s.fecha)} · ${hour(s.hora_inicio)}` : "—"} · {r.guest_count}p
-                      · {sourceLabel[r.source] ?? r.source}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {money(paid)} de {money(r.total)}
-                      {pending > 0 ? ` · pendiente ${money(pending)}` : ""}
-                    </p>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Reservado el {stamp(r.created_at)}
-                    </p>
+            {groups.map((g) => (
+              <AccordionItem key={g.key} value={g.key} className="card-soft border-0 px-4">
+                <AccordionTrigger className="py-4 hover:no-underline">
+                  <div className="flex w-full flex-wrap items-center justify-between gap-2 pr-2 text-left">
+                    <span className="text-sm">{g.title}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {g.items.length} {g.items.length === 1 ? "reserva" : "reservas"} · {g.guests}p
+                    </span>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {newIds.includes(r.id) ? (
-                      <span
-                        className="h-2.5 w-2.5 rounded-full bg-destructive"
-                        aria-label="Nueva reserva"
-                        title="Nueva reserva"
-                      />
-                    ) : null}
-                    <StatusPill tone={reservationStageTone[reservationStage(r.reservation_status, s)]}>
-                      {reservationStageLabel[reservationStage(r.reservation_status, s)]}
-                    </StatusPill>
+                </AccordionTrigger>
+                <AccordionContent className="space-y-3 pb-4">
+                  {g.items.map((r) => {
+                    const s = ws.sessions.find((x) => x.id === r.session_id);
+                    const paid = paidAmount(ws, r.id);
+                    const pending = Number(r.total) - paid;
+                    const customer = ws.customers.find((c) => c.id === r.customer_id);
+                    const handleWhatsApp = () => {
+                      openWhatsApp(
+                        customer?.phone,
+                        renderWhatsappMessage(
+                          (settings as { whatsapp_message_template?: string } | undefined)
+                            ?.whatsapp_message_template ?? "",
+                          {
+                            customer_name: customerName(ws, r.customer_id),
+                            booking_code: r.booking_code,
+                            session_date: s ? longDay(s.fecha) : "",
+                            session_time: s ? hour(s.hora_inicio) : "",
+                            guest_count: String(r.guest_count),
+                            total: money(r.total),
+                            pending_amount: money(Math.max(pending, 0)),
+                            payment_options: settings?.payment_instructions ?? "",
+                            business_name: settings?.business_name ?? "asocial",
+                          },
+                        ),
+                      );
+                    };
+                    return (
+                      <div key={r.id} className="card-soft p-4">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <Link
+                              to="/clientes/$id"
+                              params={{ id: r.customer_id }}
+                              className="text-sm underline-offset-4 hover:underline"
+                            >
+                              {customerName(ws, r.customer_id)}
+                            </Link>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {r.booking_code} ·{" "}
+                              {s ? `${longDay(s.fecha)} · ${hour(s.hora_inicio)}` : "—"} ·{" "}
+                              {r.guest_count}p · {sourceLabel[r.source] ?? r.source}
+                            </p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {money(paid)} de {money(r.total)}
+                              {pending > 0 ? ` · pendiente ${money(pending)}` : ""}
+                            </p>
+                            {r.promotion_name || Number(r.discount) > 0 ? (
+                              <p className="mt-1 text-xs text-musgo">
+                                Promoción: {r.promotion_name ?? r.promotion_code ?? "Aplicada"} · −
+                                {money(r.discount)}
+                              </p>
+                            ) : null}
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Reservado el {stamp(r.created_at)}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {newIds.includes(r.id) ? (
+                              <span
+                                className="h-2.5 w-2.5 rounded-full bg-destructive"
+                                aria-label="Nueva reserva"
+                                title="Nueva reserva"
+                              />
+                            ) : null}
+                            <StatusPill
+                              tone={reservationStageTone[reservationStage(r.reservation_status, s)]}
+                            >
+                              {reservationStageLabel[reservationStage(r.reservation_status, s)]}
+                            </StatusPill>
 
-                    <StatusPill tone={paymentStatusTone[r.payment_status as PaymentStatus]}>
-                      {paymentStatusLabel[r.payment_status as PaymentStatus]}
-                    </StatusPill>
-                    {r.reservation_status !== "cancelled" ? (
-                      <>
+                            <StatusPill tone={paymentStatusTone[r.payment_status as PaymentStatus]}>
+                              {paymentStatusLabel[r.payment_status as PaymentStatus]}
+                            </StatusPill>
+                            {r.reservation_status !== "cancelled" ? (
+                              <>
+                                {customer?.phone ? (
+                                  <Button size="sm" variant="outline" onClick={handleWhatsApp}>
+                                    <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
+                                    WhatsApp
+                                  </Button>
+                                ) : null}
+                                {pending > 0 ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setPayFor({ id: r.id, pending })}
+                                  >
+                                    Cobrar
+                                  </Button>
+                                ) : null}
+                                <Button size="sm" variant="ghost" onClick={() => setEditing(r.id)}>
+                                  Editar
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => setMoving(r.id)}>
+                                  Mover
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => setCancelling({ id: r.id, code: r.booking_code })}
+                                >
+                                  Cancelar
+                                </Button>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
 
-                        {customer?.phone ? (
-                          <Button size="sm" variant="outline" onClick={handleWhatsApp}>
-                            <MessageCircle className="h-4 w-4" strokeWidth={1.5} />
-                            WhatsApp
-                          </Button>
+                        {r.reservation_status === "cancelled" && r.cancellation_reason ? (
+                          <p className="mt-3 text-xs text-muted-foreground">
+                            Motivo: {r.cancellation_reason}
+                          </p>
                         ) : null}
-                        {pending > 0 ? (
-                          <Button size="sm" variant="outline" onClick={() => setPayFor({ id: r.id, pending })}>
-                            Cobrar
-                          </Button>
-                        ) : null}
-                        <Button size="sm" variant="ghost" onClick={() => setEditing(r.id)}>
-                          Editar
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setMoving(r.id)}>
-                          Mover
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setCancelling({ id: r.id, code: r.booking_code })}
-                        >
-                          Cancelar
-                        </Button>
-                      </>
-                    ) : null}
-                  </div>
-                </div>
-
-
-                {r.reservation_status === "cancelled" && r.cancellation_reason ? (
-                  <p className="mt-3 text-xs text-muted-foreground">Motivo: {r.cancellation_reason}</p>
-                ) : null}
-              </div>
-            );
-          })}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
+                      </div>
+                    );
+                  })}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
           </Accordion>
         )}
       </div>
 
-      {creating && ws ? <ReservationDialog open={creating} onOpenChange={setCreating} ws={ws} /> : null}
+      {creating && ws ? (
+        <ReservationDialog open={creating} onOpenChange={setCreating} ws={ws} />
+      ) : null}
       {payFor ? (
         <PaymentDialog
           open

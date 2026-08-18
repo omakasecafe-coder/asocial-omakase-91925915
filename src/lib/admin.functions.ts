@@ -5,7 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const SESSION_FIELDS =
   "id, fecha, hora_inicio, hora_fin, capacidad_maxima, precio_por_persona, ubicacion, estado, notas_internas, descripcion_publica";
 const RESERVATION_FIELDS =
-  "id, booking_code, session_id, customer_id, guest_count, subtotal, discount, total, reservation_status, payment_status, source, notes, dietary_notes, checked_in_at, cancelled_at, cancellation_reason, created_at, attendance_status, attendance_at, attendance_by, confirmation_email_sent_at";
+  "id, booking_code, session_id, customer_id, guest_count, subtotal, discount, total, promotion_id, promotion_name, promotion_code, reservation_status, payment_status, source, notes, dietary_notes, checked_in_at, cancelled_at, cancellation_reason, created_at, attendance_status, attendance_at, attendance_by, confirmation_email_sent_at";
 const CUSTOMER_FIELDS =
   "id, first_name, last_name, email, phone, instagram, birthday, acquisition_source, notes, created_at";
 
@@ -26,18 +26,59 @@ export const ensureStaffRole = createServerFn({ method: "POST" })
 export const getWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [sessions, reservations, customers, payments, blocks, refunds] = await Promise.all([
+    const [
+      sessions,
+      reservations,
+      customers,
+      payments,
+      blocks,
+      refunds,
+      promotions,
+      promotionRedemptions,
+    ] = await Promise.all([
       context.supabase.from("sessions").select(SESSION_FIELDS).order("fecha").order("hora_inicio"),
-      context.supabase.from("reservations").select(RESERVATION_FIELDS).order("created_at", { ascending: false }),
+      context.supabase
+        .from("reservations")
+        .select(RESERVATION_FIELDS)
+        .order("created_at", { ascending: false }),
       context.supabase.from("customers").select(CUSTOMER_FIELDS).order("first_name"),
-      context.supabase.from("payments").select("id, reservation_id, amount, payment_method, paid_at, transaction_reference, notes, status, confirmed_at, created_at, status_updated_at").order("paid_at", { ascending: false }),
-      context.supabase.from("seat_blocks").select("id, session_id, quantity, reason, notes, created_at"),
+      context.supabase
+        .from("payments")
+        .select(
+          "id, reservation_id, amount, payment_method, paid_at, transaction_reference, notes, status, confirmed_at, created_at, status_updated_at",
+        )
+        .order("paid_at", { ascending: false }),
+      context.supabase
+        .from("seat_blocks")
+        .select("id, session_id, quantity, reason, notes, created_at"),
       context.supabase
         .from("refunds")
-        .select("id, payment_id, reservation_id, customer_id, original_amount, amount, reason, status, processed_by, created_at")
+        .select(
+          "id, payment_id, reservation_id, customer_id, original_amount, amount, reason, status, processed_by, created_at",
+        )
+        .order("created_at", { ascending: false }),
+      context.supabase
+        .from("promotions")
+        .select(
+          "id, name, description, application_type, code, discount_type, discount_value, max_discount, min_guests, max_guests, starts_on, ends_on, usage_limit, usage_limit_per_customer, session_ids, priority, active, created_at, updated_at",
+        )
+        .order("created_at", { ascending: false }),
+      context.supabase
+        .from("promotion_redemptions")
+        .select(
+          "id, promotion_id, reservation_id, customer_id, promotion_name, promotion_code, discount_type, discount_value, discount_amount, created_at",
+        )
         .order("created_at", { ascending: false }),
     ]);
-    const err = sessions.error || reservations.error || customers.error || payments.error || blocks.error || refunds.error;
+    const err =
+      sessions.error ||
+      reservations.error ||
+      customers.error ||
+      payments.error ||
+      blocks.error ||
+      refunds.error ||
+      promotions.error ||
+      promotionRedemptions.error;
     if (err) throw new Error(err.message);
     return {
       sessions: sessions.data ?? [],
@@ -46,13 +87,19 @@ export const getWorkspace = createServerFn({ method: "GET" })
       payments: payments.data ?? [],
       blocks: blocks.data ?? [],
       refunds: refunds.data ?? [],
+      promotions: promotions.data ?? [],
+      promotionRedemptions: promotionRedemptions.data ?? [],
     };
   });
 
 export const getSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.from("settings").select("*").eq("id", true).maybeSingle();
+    const { data, error } = await context.supabase
+      .from("settings")
+      .select("*")
+      .eq("id", true)
+      .maybeSingle();
     if (error) throw new Error(error.message);
     return data;
   });
@@ -149,6 +196,141 @@ export const removeBlock = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/* ------------------------------- promotions ------------------------------- */
+
+const promotionInput = z
+  .object({
+    id: z.string().uuid().optional(),
+    name: z.string().trim().min(1).max(120),
+    description: z.string().trim().max(500).optional().default(""),
+    application_type: z.enum(["automatic", "code"]),
+    code: z.string().trim().max(40).optional().nullable(),
+    discount_type: z.enum(["percentage", "fixed", "free"]),
+    discount_value: z.number().min(0).max(100000),
+    max_discount: z.number().positive().max(100000).optional().nullable(),
+    min_guests: z.number().int().min(1).max(50),
+    max_guests: z.number().int().min(1).max(50).optional().nullable(),
+    starts_on: z.string().min(8).optional().nullable(),
+    ends_on: z.string().min(8).optional().nullable(),
+    usage_limit: z.number().int().positive().max(100000).optional().nullable(),
+    usage_limit_per_customer: z.number().int().positive().max(1000).optional().nullable(),
+    session_ids: z.array(z.string().uuid()).max(100).optional().default([]),
+    priority: z.number().int().min(-1000).max(1000).optional().default(0),
+    active: z.boolean(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.application_type === "code" && !value.code?.trim()) {
+      ctx.addIssue({ code: "custom", path: ["code"], message: "Ingresa un código promocional" });
+    }
+    if (value.discount_type === "percentage" && value.discount_value > 100) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["discount_value"],
+        message: "El porcentaje no puede superar 100",
+      });
+    }
+    if (value.discount_type !== "free" && value.discount_value <= 0) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["discount_value"],
+        message: "El descuento debe ser mayor a cero",
+      });
+    }
+    if (value.max_guests && value.max_guests < value.min_guests) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["max_guests"],
+        message: "Debe ser igual o mayor al mínimo",
+      });
+    }
+    if (value.starts_on && value.ends_on && value.ends_on < value.starts_on) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["ends_on"],
+        message: "La fecha final no puede ser anterior",
+      });
+    }
+  });
+
+export const savePromotion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => promotionInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const { logAudit } = await import("@/lib/admin.server");
+    const { id, ...input } = data;
+    const payload = {
+      name: input.name,
+      description: input.description,
+      application_type: input.application_type,
+      code: input.application_type === "code" ? input.code!.trim().toUpperCase() : null,
+      discount_type: input.discount_type,
+      discount_value: input.discount_type === "free" ? 0 : input.discount_value,
+      max_discount: input.max_discount ?? null,
+      min_guests: input.min_guests,
+      max_guests: input.max_guests ?? null,
+      starts_on: input.starts_on ?? null,
+      ends_on: input.ends_on ?? null,
+      usage_limit: input.usage_limit ?? null,
+      usage_limit_per_customer: input.usage_limit_per_customer ?? null,
+      session_ids: input.session_ids,
+      priority: input.priority,
+      active: input.active,
+    };
+
+    if (id) {
+      const { data: before } = await context.supabase
+        .from("promotions")
+        .select("*")
+        .eq("id", id)
+        .maybeSingle();
+      const { error } = await context.supabase.from("promotions").update(payload).eq("id", id);
+      if (error) throw new Error(error.message);
+      await logAudit(context.supabase, context.userId, {
+        action: "update_promotion",
+        entityType: "promotion",
+        entityId: id,
+        ...(before ? { oldValues: before } : {}),
+        newValues: payload,
+      });
+      return { id };
+    }
+
+    const { data: created, error } = await context.supabase
+      .from("promotions")
+      .insert(payload)
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    await logAudit(context.supabase, context.userId, {
+      action: "create_promotion",
+      entityType: "promotion",
+      entityId: created.id,
+      newValues: payload,
+    });
+    return { id: created.id };
+  });
+
+export const setPromotionActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid(), active: z.boolean() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { logAudit } = await import("@/lib/admin.server");
+    const { error } = await context.supabase
+      .from("promotions")
+      .update({ active: data.active })
+      .eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await logAudit(context.supabase, context.userId, {
+      action: data.active ? "activate_promotion" : "pause_promotion",
+      entityType: "promotion",
+      entityId: data.id,
+      newValues: { active: data.active },
+    });
+    return { ok: true };
+  });
+
 /* ------------------------------- reservations ------------------------------ */
 
 export const createReservationAdmin = createServerFn({ method: "POST" })
@@ -170,9 +352,8 @@ export const createReservationAdmin = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { sendReservationPaymentInstructionsEmail, sendInternalNewReservationEmail } = await import(
-      "@/lib/admin.server"
-    );
+    const { sendReservationPaymentInstructionsEmail, sendInternalNewReservationEmail } =
+      await import("@/lib/admin.server");
     const args = {
       _session_id: data.sessionId,
       _first_name: data.firstName || "Invitado",
@@ -191,7 +372,8 @@ export const createReservationAdmin = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const reservation = res as unknown as { id: string; booking_code: string };
     const shouldSendPaymentInstructions =
-      data.reservationStatus === "pending" && (data.paymentStatus === "pending" || data.paymentStatus === "partial");
+      data.reservationStatus === "pending" &&
+      (data.paymentStatus === "pending" || data.paymentStatus === "partial");
     const email = shouldSendPaymentInstructions
       ? await sendReservationPaymentInstructionsEmail(context.supabase, reservation.id)
       : { sent: false, reason: "not_pending_payment" };
@@ -220,7 +402,9 @@ export const moveReservation = createServerFn({ method: "POST" })
 export const cancelReservation = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) =>
-    z.object({ reservationId: z.string().uuid(), reason: z.string().trim().min(1).max(200) }).parse(data),
+    z
+      .object({ reservationId: z.string().uuid(), reason: z.string().trim().min(1).max(200) })
+      .parse(data),
   )
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("cancel_reservation", {
@@ -310,7 +494,9 @@ export const registerPayment = createServerFn({ method: "POST" })
     const [{ data: reservation }, { data: payment }] = await Promise.all([
       context.supabase
         .from("reservations")
-        .select("id, booking_code, guest_count, session_id, total, payment_status, reservation_status")
+        .select(
+          "id, booking_code, guest_count, session_id, total, payment_status, reservation_status",
+        )
         .eq("id", data.reservationId)
         .maybeSingle(),
       context.supabase
@@ -372,7 +558,10 @@ export const setAttendance = createServerFn({ method: "POST" })
               : { checked_in_at: null, checked_in_by: null }),
           };
 
-    const { error } = await context.supabase.from("reservations").update(patch).eq("id", data.reservationId);
+    const { error } = await context.supabase
+      .from("reservations")
+      .update(patch)
+      .eq("id", data.reservationId);
     if (error) throw new Error(error.message);
 
     await logAudit(context.supabase, context.userId, {
@@ -434,7 +623,8 @@ export const updateReservation = createServerFn({ method: "POST" })
       const { data: available } = await context.supabase.rpc("session_available", {
         _session_id: data.sessionId,
       });
-      const room = Number(available ?? 0) + (before.session_id === data.sessionId ? before.guest_count : 0);
+      const room =
+        Number(available ?? 0) + (before.session_id === data.sessionId ? before.guest_count : 0);
       if (data.guestCount > room) throw new Error(`Solo quedan ${room} lugares en esa sesión`);
     }
 
@@ -442,12 +632,13 @@ export const updateReservation = createServerFn({ method: "POST" })
     const subtotal = price * data.guestCount;
     const discount = Number(before.discount ?? 0);
 
-    const cancelling = data.reservationStatus === "cancelled" && before.reservation_status !== "cancelled";
+    const cancelling =
+      data.reservationStatus === "cancelled" && before.reservation_status !== "cancelled";
     const patch = {
       guest_count: data.guestCount,
       notes: data.notes,
       subtotal,
-      total: subtotal - discount,
+      total: Math.max(subtotal - discount, 0),
       reservation_status: data.reservationStatus,
       ...(cancelling ? { cancelled_at: new Date().toISOString() } : {}),
     };
@@ -551,7 +742,10 @@ export const updatePaymentStatus = createServerFn({ method: "POST" })
       ...(data.notes ? { notes: [before.notes, data.notes].filter(Boolean).join("\n") } : {}),
     };
 
-    const { error } = await context.supabase.from("payments").update(patch).eq("id", data.paymentId);
+    const { error } = await context.supabase
+      .from("payments")
+      .update(patch)
+      .eq("id", data.paymentId);
     if (error) throw new Error(error.message);
 
     await logAudit(context.supabase, context.userId, {
@@ -565,7 +759,9 @@ export const updatePaymentStatus = createServerFn({ method: "POST" })
     const [{ data: reservation }, { data: payments }] = await Promise.all([
       context.supabase
         .from("reservations")
-        .select("id, booking_code, guest_count, session_id, total, payment_status, reservation_status")
+        .select(
+          "id, booking_code, guest_count, session_id, total, payment_status, reservation_status",
+        )
         .eq("id", before.reservation_id)
         .maybeSingle(),
       context.supabase
@@ -583,7 +779,9 @@ export const updatePaymentStatus = createServerFn({ method: "POST" })
         .update({
           payment_status: isFullyPaid ? "paid" : paidTotal > 0 ? "partial" : "pending",
           reservation_status:
-            isFullyPaid && reservation.reservation_status === "pending" ? "confirmed" : reservation.reservation_status,
+            isFullyPaid && reservation.reservation_status === "pending"
+              ? "confirmed"
+              : reservation.reservation_status,
         })
         .eq("id", before.reservation_id);
     }
@@ -657,7 +855,11 @@ export const createRefund = createServerFn({ method: "POST" })
     const status = refundStatus(paid, totalRefunded);
     await context.supabase
       .from("payments")
-      .update({ status, status_updated_at: new Date().toISOString(), status_updated_by: context.userId })
+      .update({
+        status,
+        status_updated_at: new Date().toISOString(),
+        status_updated_by: context.userId,
+      })
       .eq("id", data.paymentId);
 
     if (status === "refunded") {
@@ -672,7 +874,12 @@ export const createRefund = createServerFn({ method: "POST" })
       entityType: "payment",
       entityId: data.paymentId,
       oldValues: { refunded: already },
-      newValues: { refunded: totalRefunded, amount: data.amount, reason: data.reason, refund_id: created.id },
+      newValues: {
+        refunded: totalRefunded,
+        amount: data.amount,
+        reason: data.reason,
+        refund_id: created.id,
+      },
     });
 
     return { ok: true, refundId: created.id, status };
@@ -685,7 +892,9 @@ export const getEmailTemplates = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("email_templates")
-      .select("id, template_key, name, subject, title, body, signature, extra_info, enabled, updated_at")
+      .select(
+        "id, template_key, name, subject, title, body, signature, extra_info, enabled, updated_at",
+      )
       .order("template_key");
     if (error) throw new Error(error.message);
     return data ?? [];
@@ -742,7 +951,10 @@ export const listStaffUsers = createServerFn({ method: "GET" })
     return {
       isAdmin: Boolean(isAdmin),
       currentUserId: context.userId,
-      users: (users ?? []).map((u) => ({ ...u, role: (roleByUser.get(u.user_id) ?? "operator") as string })),
+      users: (users ?? []).map((u) => ({
+        ...u,
+        role: (roleByUser.get(u.user_id) ?? "operator") as string,
+      })),
     };
   });
 
@@ -858,7 +1070,12 @@ export const updateStaffUser = createServerFn({ method: "POST" })
       entityType: "staff_user",
       entityId: data.userId,
       oldValues: { full_name: before?.full_name ?? null, active: before?.active ?? null },
-      newValues: { full_name: data.fullName, active: data.active, role: data.role, modules: data.modules },
+      newValues: {
+        full_name: data.fullName,
+        active: data.active,
+        role: data.role,
+        modules: data.modules,
+      },
     });
     return { ok: true };
   });
@@ -904,7 +1121,7 @@ export const sendTestEmail = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z
       .object({
-        template: z.enum(["reservation_confirmed", "payment_confirmed"]),
+        template: z.enum(["reservation_confirmed", "payment_confirmed", "complimentary_confirmed"]),
         to: z.string().trim().email().max(160),
       })
       .parse(data),
