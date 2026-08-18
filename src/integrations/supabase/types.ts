@@ -190,7 +190,7 @@ export type Database = {
       promotion_redemptions: {
         Row: {
           created_at: string
-          customer_id: string
+          customer_id: string | null
           discount_amount: number
           discount_type: string
           discount_value: number
@@ -202,19 +202,19 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          customer_id: string
-          discount_amount: number
-          discount_type: string
-          discount_value: number
+          customer_id?: string | null
+          discount_amount?: number
+          discount_type?: string
+          discount_value?: number
           id?: string
           promotion_code?: string | null
           promotion_id: string
-          promotion_name: string
+          promotion_name?: string
           reservation_id: string
         }
         Update: {
           created_at?: string
-          customer_id?: string
+          customer_id?: string | null
           discount_amount?: number
           discount_type?: string
           discount_value?: number
@@ -242,7 +242,7 @@ export type Database = {
           {
             foreignKeyName: "promotion_redemptions_reservation_id_fkey"
             columns: ["reservation_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "reservations"
             referencedColumns: ["id"]
           },
@@ -272,11 +272,11 @@ export type Database = {
         }
         Insert: {
           active?: boolean
-          application_type: string
+          application_type?: string
           code?: string | null
           created_at?: string
           description?: string
-          discount_type: string
+          discount_type?: string
           discount_value?: number
           ends_on?: string | null
           id?: string
@@ -913,6 +913,42 @@ export type Database = {
         }
       }
       next_booking_code: { Args: { _fecha: string }; Returns: string }
+      pick_promotion: {
+        Args: {
+          _email: string
+          _guest_count: number
+          _phone: string
+          _promo_code: string
+          _session_id: string
+        }
+        Returns: {
+          active: boolean
+          application_type: string
+          code: string | null
+          created_at: string
+          description: string
+          discount_type: string
+          discount_value: number
+          ends_on: string | null
+          id: string
+          max_discount: number | null
+          max_guests: number | null
+          min_guests: number
+          name: string
+          priority: number
+          session_ids: string[]
+          starts_on: string | null
+          updated_at: string
+          usage_limit: number | null
+          usage_limit_per_customer: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "promotions"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       public_create_reservation: {
         Args: {
           _dietary_notes?: string
@@ -930,8 +966,8 @@ export type Database = {
           discount: number
           guest_count: number
           payment_status: Database["public"]["Enums"]["payment_status"]
-          promotion_code: string | null
-          promotion_name: string | null
+          promotion_code: string
+          promotion_name: string
           reservation_status: Database["public"]["Enums"]["reservation_status"]
           subtotal: number
           total: number
@@ -947,10 +983,10 @@ export type Database = {
         }
         Returns: {
           discount: number
-          promotion_application_type: string | null
-          promotion_code: string | null
-          promotion_id: string | null
-          promotion_name: string | null
+          promotion_application_type: string
+          promotion_code: string
+          promotion_id: string
+          promotion_name: string
           subtotal: number
           total: number
         }[]
