@@ -53,20 +53,22 @@ function siteHead(publicSite: boolean) {
 }
 
 export const Route = createFileRoute("/")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    view: search["view"] === "public" ? ("public" as const) : undefined,
+  validateSearch: (search: Record<string, unknown>): { view?: "public"; lang?: string } => ({
+    ...(search["view"] === "public" ? { view: "public" as const } : {}),
+    ...(typeof search["lang"] === "string" ? { lang: search["lang"] } : {}),
   }),
   loader: () => getSiteHostname(),
-  head: ({ loaderData }) => siteHead(isPublicSiteHost(loaderData)),
+  head: ({ loaderData }) => siteHead(isPublicSiteHost(loaderData ?? "")),
   component: HomePage,
 });
 
+
 function HomePage() {
   const hostname = Route.useLoaderData();
-  const { view } = Route.useSearch();
+  const { view, lang } = Route.useSearch();
   return isPublicSiteHost(hostname) || view === "public" ? (
     <PublicOmakaseLanding />
   ) : (
-    <BookingExperience />
+    <BookingExperience lang={lang} />
   );
 }

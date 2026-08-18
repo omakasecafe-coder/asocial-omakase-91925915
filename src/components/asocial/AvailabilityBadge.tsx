@@ -6,7 +6,15 @@ export function cuposLabel(n: number) {
   return `${n} cupos`;
 }
 
-export function AvailabilityBadge({ available, className }: { available: number; className?: string }) {
+export function AvailabilityBadge({
+  available,
+  className,
+  label,
+}: {
+  available: number;
+  className?: string;
+  label?: string;
+}) {
   const tone =
     available <= 0 ? "text-carbon border-carbon/30" : available <= 2 ? "text-arcilla border-arcilla/40" : "text-musgo border-musgo/40";
   return (
@@ -17,7 +25,7 @@ export function AvailabilityBadge({ available, className }: { available: number;
         className,
       )}
     >
-      {cuposLabel(available)}
+      {label ?? cuposLabel(available)}
     </span>
   );
 }
