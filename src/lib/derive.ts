@@ -54,7 +54,10 @@ export function dashboardMetrics(ws: Workspace) {
     .filter((p) => (p.paid_at ?? "").slice(0, 10) === today)
     .reduce((sum, p) => sum + Number(p.amount), 0);
   const pendingAmount = ws.reservations
-    .filter((r) => isValidReservation(r) && (r.payment_status === "pending" || r.payment_status === "partial"))
+    .filter(
+      (r) =>
+        isValidReservation(r) && (r.payment_status === "pending" || r.payment_status === "partial"),
+    )
     .reduce((sum, r) => sum + (Number(r.total) - paidAmount(ws, r.id)), 0);
 
   const attendedByCustomer = new Map<string, number>();
@@ -100,13 +103,31 @@ export function customerStats(ws: Workspace, customerId: string) {
   };
 }
 
-export function reportMetrics(ws: Workspace, from: string, to: string) {
-  const sessions = ws.sessions.filter((s) => s.fecha >= from && s.fecha <= to && s.estado !== "cancelled");
+export type PromotionReportFilter = "all" | "with_promotion" | "without_promotion";
+
+export function reportMetrics(
+  ws: Workspace,
+  from: string,
+  to: string,
+  promotionFilter: PromotionReportFilter = "all",
+) {
+  const sessions = ws.sessions.filter(
+    (s) => s.fecha >= from && s.fecha <= to && s.estado !== "cancelled",
+  );
   const ids = new Set(sessions.map((s) => s.id));
-  const reservations = ws.reservations.filter((r) => ids.has(r.session_id));
+  const reservations = ws.reservations.filter((r) => {
+    if (!ids.has(r.session_id)) return false;
+    const withPromotion = Boolean(r.promotion_id || Number(r.discount) > 0);
+    if (promotionFilter === "with_promotion") return withPromotion;
+    if (promotionFilter === "without_promotion") return !withPromotion;
+    return true;
+  });
   const valid = reservations.filter(isValidReservation);
   const guests = valid.reduce((sum, r) => sum + r.guest_count, 0);
   const revenue = reservations.reduce((sum, r) => sum + paidAmount(ws, r.id), 0);
+  const grossSales = valid.reduce((sum, r) => sum + Number(r.subtotal), 0);
+  const discounts = valid.reduce((sum, r) => sum + Number(r.discount), 0);
+  const promotionalReservations = valid.filter((r) => r.promotion_id || Number(r.discount) > 0);
   const capacity = sessions.reduce((sum, s) => sum + s.capacidad_maxima, 0);
   const noShows = reservations.filter((r) => r.reservation_status === "no_show").length;
   const cancelled = reservations.filter((r) => r.reservation_status === "cancelled").length;
@@ -120,8 +141,45 @@ export function reportMetrics(ws: Workspace, from: string, to: string) {
     else newCustomers += 1;
   }
 
+  const promotionGroups = new Map<
+    string,
+    {
+      name: string;
+      code: string | null;
+      reservations: number;
+      guests: number;
+      discount: number;
+      revenue: number;
+    }
+  >();
+  for (const reservation of promotionalReservations) {
+    const key =
+      reservation.promotion_id ??
+      `${reservation.promotion_name ?? "promotion"}:${reservation.promotion_code ?? ""}`;
+    const current = promotionGroups.get(key) ?? {
+      name: reservation.promotion_name ?? "Promoción",
+      code: reservation.promotion_code,
+      reservations: 0,
+      guests: 0,
+      discount: 0,
+      revenue: 0,
+    };
+    current.reservations += 1;
+    current.guests += reservation.guest_count;
+    current.discount += Number(reservation.discount);
+    current.revenue += paidAmount(ws, reservation.id);
+    promotionGroups.set(key, current);
+  }
+
   return {
     revenue,
+    grossSales,
+    discounts,
+    promotionalReservations: promotionalReservations.length,
+    promotionShare: valid.length > 0 ? promotionalReservations.length / valid.length : 0,
+    promotionBreakdown: [...promotionGroups.values()].sort(
+      (a, b) => b.reservations - a.reservations,
+    ),
     reservations: valid.length,
     guests,
     occupancy: capacity > 0 ? guests / capacity : 0,

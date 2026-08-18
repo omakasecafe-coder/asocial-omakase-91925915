@@ -13,11 +13,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ReservarRouteImport } from './routes/reservar'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authenticated/configuracion'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedPagosRouteImport } from './routes/_authenticated/pagos'
 import { Route as AuthenticatedProbarCorreoRouteImport } from './routes/_authenticated/probar-correo'
+import { Route as AuthenticatedPromocionesRouteImport } from './routes/_authenticated/promociones'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
@@ -47,6 +50,16 @@ const ReservarRoute = ReservarRouteImport.update({
   path: '/reservar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
   id: '/calendario',
   path: '/calendario',
@@ -72,6 +85,12 @@ const AuthenticatedProbarCorreoRoute =
   AuthenticatedProbarCorreoRouteImport.update({
     id: '/probar-correo',
     path: '/probar-correo',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPromocionesRoute =
+  AuthenticatedPromocionesRouteImport.update({
+    id: '/promociones',
+    path: '/promociones',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
@@ -127,11 +146,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reservar': typeof ReservarRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/pagos': typeof AuthenticatedPagosRoute
   '/probar-correo': typeof AuthenticatedProbarCorreoRoute
+  '/promociones': typeof AuthenticatedPromocionesRoute
   '/reportes': typeof AuthenticatedReportesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -146,11 +168,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reservar': typeof ReservarRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/pagos': typeof AuthenticatedPagosRoute
   '/probar-correo': typeof AuthenticatedProbarCorreoRoute
+  '/promociones': typeof AuthenticatedPromocionesRoute
   '/reportes': typeof AuthenticatedReportesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -167,11 +192,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/reservar': typeof ReservarRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/configuracion': typeof AuthenticatedConfiguracionRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/pagos': typeof AuthenticatedPagosRoute
   '/_authenticated/probar-correo': typeof AuthenticatedProbarCorreoRoute
+  '/_authenticated/promociones': typeof AuthenticatedPromocionesRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/clientes/$id': typeof AuthenticatedClientesIdRoute
@@ -188,11 +216,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reservar'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/calendario'
     | '/configuracion'
     | '/dashboard'
     | '/pagos'
     | '/probar-correo'
+    | '/promociones'
     | '/reportes'
     | '/usuarios'
     | '/clientes/$id'
@@ -207,11 +238,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/reservar'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/calendario'
     | '/configuracion'
     | '/dashboard'
     | '/pagos'
     | '/probar-correo'
+    | '/promociones'
     | '/reportes'
     | '/usuarios'
     | '/clientes/$id'
@@ -227,11 +261,14 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/reservar'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/_authenticated/calendario'
     | '/_authenticated/configuracion'
     | '/_authenticated/dashboard'
     | '/_authenticated/pagos'
     | '/_authenticated/probar-correo'
+    | '/_authenticated/promociones'
     | '/_authenticated/reportes'
     | '/_authenticated/usuarios'
     | '/_authenticated/clientes/$id'
@@ -248,6 +285,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ReservarRoute: typeof ReservarRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
@@ -280,6 +319,20 @@ declare module '@tanstack/react-router' {
       path: '/reservar'
       fullPath: '/reservar'
       preLoaderRoute: typeof ReservarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/calendario': {
@@ -315,6 +368,13 @@ declare module '@tanstack/react-router' {
       path: '/probar-correo'
       fullPath: '/probar-correo'
       preLoaderRoute: typeof AuthenticatedProbarCorreoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/promociones': {
+      id: '/_authenticated/promociones'
+      path: '/promociones'
+      fullPath: '/promociones'
+      preLoaderRoute: typeof AuthenticatedPromocionesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reportes': {
@@ -389,6 +449,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedPagosRoute: typeof AuthenticatedPagosRoute
   AuthenticatedProbarCorreoRoute: typeof AuthenticatedProbarCorreoRoute
+  AuthenticatedPromocionesRoute: typeof AuthenticatedPromocionesRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedClientesIdRoute: typeof AuthenticatedClientesIdRoute
@@ -404,6 +465,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedPagosRoute: AuthenticatedPagosRoute,
   AuthenticatedProbarCorreoRoute: AuthenticatedProbarCorreoRoute,
+  AuthenticatedPromocionesRoute: AuthenticatedPromocionesRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedClientesIdRoute: AuthenticatedClientesIdRoute,
@@ -421,6 +483,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ReservarRoute: ReservarRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }

@@ -7,6 +7,7 @@ import {
   CreditCard,
   LayoutDashboard,
   LineChart,
+  BadgePercent,
   Menu,
   Mail,
   Settings as SettingsIcon,
@@ -31,6 +32,7 @@ const nav = [
   { to: "/reservas", key: "reservas", label: "Reservas", icon: Ticket },
   { to: "/clientes", key: "clientes", label: "Clientes", icon: Users },
   { to: "/pagos", key: "pagos", label: "Pagos", icon: CreditCard },
+  { to: "/promociones", key: "promociones", label: "Promociones", icon: BadgePercent },
   { to: "/reportes", key: "reportes", label: "Reportes", icon: LineChart },
   { to: "/usuarios", key: "usuarios", label: "Usuarios", icon: UserCog },
   { to: "/configuracion", key: "configuracion", label: "Configuración", icon: SettingsIcon },
@@ -155,7 +157,9 @@ export function AdminShell({
 
           <div className="min-w-0 flex-1">
             <h1 className="truncate text-lg font-medium text-foreground">{title}</h1>
-            {description ? <p className="mt-0.5 text-xs text-muted-foreground">{description}</p> : null}
+            {description ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>
+            ) : null}
           </div>
           {actions}
         </header>

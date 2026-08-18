@@ -12,42 +12,22 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { initAnalytics, trackPageView } from "@/lib/analytics";
+import {
+  initAnalytics,
+  initConsentMode,
+  initMarketingPixels,
+  trackPageView,
+  updateConsentMode,
+} from "@/lib/analytics";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieConsent } from "@/components/asocial/CookieConsent";
-import { onConsentChange } from "@/lib/cookie-consent";
+import { onConsentChange, readConsent } from "@/lib/cookie-consent";
 
 import { supabase } from "@/integrations/supabase/client";
 
 const siteTitle = "asocial café omakase";
 const siteDescription =
   "Una experiencia de café omakase en Barranco: una barra íntima, un recorrido guiado y una pausa para descubrir el café de otra manera.";
-const metaPixelId = "1687497742354743";
-const metaPixelCode = `
-!function(f,b,e,v,n,t,s)
-{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
-'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '${metaPixelId}');
-fbq('track', 'PageView');
-`;
-const tiktokPixelId = "D9PTFCRC77UFAJG52AQG";
-const tiktokPixelCode = `
-!function (w, d, t) {
-  w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie","holdConsent","revokeConsent","grantConsent"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(
-var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var r="https://analytics.tiktok.com/i18n/pixel/events.js",o=n&&n.partner;ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=r,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};n=document.createElement("script")
-;n.type="text/javascript",n.async=!0,n.src=r+"?sdkid="+e+"&lib="+t;e=document.getElementsByTagName("script")[0];e.parentNode.insertBefore(n,e)};
-
-
-  ttq.load('${tiktokPixelId}');
-  ttq.page();
-}(window, document, 'ttq');
-`;
-
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -125,7 +105,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: siteTitle },
       { property: "og:description", content: siteDescription },
       { property: "og:locale", content: "es_PE" },
-      { name: "twitter:card", content: "summary" },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: siteTitle },
       { name: "twitter:description", content: siteDescription },
     ],
@@ -154,19 +134,8 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="es">
       <head>
         <HeadContent />
-        <script dangerouslySetInnerHTML={{ __html: metaPixelCode }} />
-        <script dangerouslySetInnerHTML={{ __html: tiktokPixelCode }} />
       </head>
       <body>
-        <noscript>
-          <img
-            alt=""
-            height="1"
-            width="1"
-            style={{ display: "none" }}
-            src={`https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1`}
-          />
-        </noscript>
         {children}
         <Scripts />
       </body>
@@ -178,12 +147,21 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const language = useRouterState({
+    select: (s) => (s.location.search.lang === "en" ? "en" : "es"),
+  });
 
   useEffect(() => {
-    initAnalytics();
+    initConsentMode();
+    if (readConsent() === "granted") {
+      initAnalytics();
+      initMarketingPixels();
+    }
     return onConsentChange((value) => {
+      updateConsentMode(value);
       if (value !== "granted") return;
       initAnalytics();
+      initMarketingPixels();
       trackPageView(window.location.pathname);
     });
   }, []);
@@ -201,13 +179,12 @@ function RootComponent() {
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);
 
-
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster />
-      <CookieConsent />
+      <CookieConsent lang={language} />
     </QueryClientProvider>
   );
 }

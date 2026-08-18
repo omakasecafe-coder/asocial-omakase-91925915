@@ -3,9 +3,10 @@
  * Keeping them out of the server-function module avoids runtime-splitting issues.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { sendTemplateEmail, type TemplateRow } from "./email.server";
 
-type DB = SupabaseClient<any, "public", any>;
+type DB = SupabaseClient<Database>;
 
 export async function requireAdmin(supabase: DB, userId: string) {
   const { data, error } = await supabase.rpc("has_role", { _user_id: userId, _role: "admin" });
@@ -21,8 +22,8 @@ export async function logAudit(
     action: string;
     entityType: string;
     entityId: string;
-    oldValues?: Record<string, unknown>;
-    newValues?: Record<string, unknown>;
+    oldValues?: Json;
+    newValues?: Json;
   },
 ) {
   await supabase.from("audit_logs").insert({
@@ -36,7 +37,9 @@ export async function logAudit(
 }
 
 const money = (value: number, currency = "PEN") =>
-  new Intl.NumberFormat("es-PE", { style: "currency", currency, minimumFractionDigits: 0 }).format(value);
+  new Intl.NumberFormat("es-PE", { style: "currency", currency, minimumFractionDigits: 0 }).format(
+    value,
+  );
 
 const longDate = (iso: string) => {
   if (!iso) return "";
@@ -67,7 +70,9 @@ export async function buildEmailContext(
 ): Promise<EmailContext | null> {
   const { data: reservation } = await supabase
     .from("reservations")
-    .select("id, booking_code, guest_count, total, reservation_status, session_id, customer_id")
+    .select(
+      "id, booking_code, guest_count, subtotal, discount, total, promotion_name, promotion_code, reservation_status, payment_status, session_id, customer_id",
+    )
     .eq("id", reservationId)
     .maybeSingle();
   if (!reservation) return null;
@@ -78,8 +83,16 @@ export async function buildEmailContext(
       .select("first_name, last_name, email")
       .eq("id", reservation.customer_id)
       .maybeSingle(),
-    supabase.from("sessions").select("fecha, hora_inicio").eq("id", reservation.session_id).maybeSingle(),
-    supabase.from("settings").select("business_name, currency, payment_instructions").eq("id", true).maybeSingle(),
+    supabase
+      .from("sessions")
+      .select("fecha, hora_inicio")
+      .eq("id", reservation.session_id)
+      .maybeSingle(),
+    supabase
+      .from("settings")
+      .select("business_name, currency, payment_instructions")
+      .eq("id", true)
+      .maybeSingle(),
   ]);
 
   const currency = settings?.currency ?? "PEN";
@@ -92,8 +105,15 @@ export async function buildEmailContext(
       reservation_time: (session?.hora_inicio ?? "").slice(0, 5),
       party_size: String(reservation.guest_count),
       reservation_total: money(Number(reservation.total ?? 0), currency),
-      reservation_status: reservationStatusEs[reservation.reservation_status] ?? reservation.reservation_status,
+      reservation_subtotal: money(Number(reservation.subtotal ?? 0), currency),
+      reservation_discount: money(Number(reservation.discount ?? 0), currency),
+      reservation_status:
+        reservationStatusEs[reservation.reservation_status] ?? reservation.reservation_status,
+      payment_status:
+        reservation.payment_status === "complimentary" ? "Cortesía" : reservation.payment_status,
       booking_code: reservation.booking_code,
+      promotion_name: reservation.promotion_name ?? "Cortesía",
+      promotion_code: reservation.promotion_code ?? "",
       business_name: settings?.business_name ?? "asocial",
       payment_options: settings?.payment_instructions ?? "",
       ...extra,
@@ -114,10 +134,13 @@ async function getTemplate(supabase: DB, key: string): Promise<TemplateRow | nul
 export async function sendReservationPaymentInstructionsEmail(supabase: DB, reservationId: string) {
   const { data: row } = await supabase
     .from("reservations")
-    .select("confirmation_email_sent_at")
+    .select("confirmation_email_sent_at, payment_status, total")
     .eq("id", reservationId)
     .maybeSingle();
   if (!row || row.confirmation_email_sent_at) return { sent: false, reason: "already_sent" };
+  if (row.payment_status === "complimentary" || Number(row.total) === 0) {
+    return { sent: false, reason: "complimentary_reservation" };
+  }
 
   const template = await getTemplate(supabase, "reservation_confirmed");
   const ctx = await buildEmailContext(supabase, reservationId);
@@ -129,6 +152,41 @@ export async function sendReservationPaymentInstructionsEmail(supabase: DB, rese
     vars: ctx.vars,
     idempotencyKey: `reservation-payment-instructions-${reservationId}`,
     label: "reservation_payment_instructions",
+  });
+  if (result.sent) {
+    await supabase
+      .from("reservations")
+      .update({ confirmation_email_sent_at: new Date().toISOString() })
+      .eq("id", reservationId);
+  }
+  return result;
+}
+
+/** Sends immediate confirmation for reservations whose final total is zero. */
+export async function sendComplimentaryReservationConfirmedEmail(
+  supabase: DB,
+  reservationId: string,
+) {
+  const { data: row } = await supabase
+    .from("reservations")
+    .select("confirmation_email_sent_at, payment_status, total")
+    .eq("id", reservationId)
+    .maybeSingle();
+  if (!row || row.confirmation_email_sent_at) return { sent: false, reason: "already_sent" };
+  if (row.payment_status !== "complimentary" || Number(row.total) !== 0) {
+    return { sent: false, reason: "not_complimentary" };
+  }
+
+  const template = await getTemplate(supabase, "complimentary_confirmed");
+  const ctx = await buildEmailContext(supabase, reservationId);
+  if (!template || !ctx) return { sent: false, reason: "missing_data" };
+
+  const result = await sendTemplateEmail({
+    template,
+    to: ctx.email,
+    vars: ctx.vars,
+    idempotencyKey: `complimentary-confirmed-${reservationId}`,
+    label: "complimentary_confirmed",
   });
   if (result.sent) {
     await supabase
@@ -162,7 +220,11 @@ export async function sendPaymentConfirmedEmail(supabase: DB, paymentId: string)
   const ctx = await buildEmailContext(supabase, payment.reservation_id, {});
   if (!template || !ctx) return { sent: false, reason: "missing_data" };
 
-  const { data: settings } = await supabase.from("settings").select("currency").eq("id", true).maybeSingle();
+  const { data: settings } = await supabase
+    .from("settings")
+    .select("currency")
+    .eq("id", true)
+    .maybeSingle();
   const vars = {
     ...ctx.vars,
     payment_amount: money(Number(payment.amount ?? 0), settings?.currency ?? "PEN"),
@@ -177,7 +239,10 @@ export async function sendPaymentConfirmedEmail(supabase: DB, paymentId: string)
     label: "payment_confirmed",
   });
   if (result.sent) {
-    await supabase.from("payments").update({ email_sent_at: new Date().toISOString() }).eq("id", paymentId);
+    await supabase
+      .from("payments")
+      .update({ email_sent_at: new Date().toISOString() })
+      .eq("id", paymentId);
   }
   return result;
 }
@@ -207,12 +272,19 @@ export async function sendTestTemplateEmail(supabase: DB, key: string, to: strin
     reservation_time: "19:00",
     party_size: "2",
     reservation_total: money(180, currency),
-    reservation_status: key === "payment_confirmed" ? reservationStatusEs["confirmed"]! : reservationStatusEs["pending"]!,
+    reservation_subtotal: money(200, currency),
+    reservation_discount: money(20, currency),
+    reservation_status:
+      key === "payment_confirmed" || key === "complimentary_confirmed"
+        ? reservationStatusEs["confirmed"]!
+        : reservationStatusEs["pending"]!,
     booking_code: "TEST-0001",
     business_name: settings?.business_name ?? "asocial",
     payment_options: settings?.payment_instructions ?? "",
     payment_amount: money(180, currency),
     payment_status: "Pagado",
+    promotion_name: "Promoción de prueba",
+    promotion_code: "PRUEBA20",
   };
 
   return sendTemplateEmail({
@@ -231,9 +303,12 @@ const INTERNAL_NOTIFICATION_TO = "reservas@asocialcafe.com";
 const shortDate = (iso: string) => {
   if (!iso) return "";
   const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat("es-PE", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(
-    new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1)),
-  );
+  return new Intl.DateTimeFormat("es-PE", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1)));
 };
 
 /** Notifies the team by email as soon as a new reservation is created. */
@@ -241,7 +316,7 @@ export async function sendInternalNewReservationEmail(supabase: DB, reservationI
   const { data: reservation } = await supabase
     .from("reservations")
     .select(
-      "id, booking_code, guest_count, total, source, notes, dietary_notes, reservation_status, payment_status, session_id, customer_id, created_at",
+      "id, booking_code, guest_count, subtotal, discount, total, promotion_name, promotion_code, source, notes, dietary_notes, reservation_status, payment_status, session_id, customer_id, created_at",
     )
     .eq("id", reservationId)
     .maybeSingle();
@@ -253,14 +328,19 @@ export async function sendInternalNewReservationEmail(supabase: DB, reservationI
       .select("first_name, last_name, email, phone")
       .eq("id", reservation.customer_id)
       .maybeSingle(),
-    supabase.from("sessions").select("fecha, hora_inicio, hora_fin").eq("id", reservation.session_id).maybeSingle(),
+    supabase
+      .from("sessions")
+      .select("fecha, hora_inicio, hora_fin")
+      .eq("id", reservation.session_id)
+      .maybeSingle(),
     supabase.from("settings").select("business_name, currency").eq("id", true).maybeSingle(),
   ]);
 
   const currency = settings?.currency ?? "PEN";
   const fecha = session?.fecha ?? "";
   const hora = (session?.hora_inicio ?? "").slice(0, 5);
-  const customerName = `${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`.trim() || "Sin nombre";
+  const customerName =
+    `${customer?.first_name ?? ""} ${customer?.last_name ?? ""}`.trim() || "Sin nombre";
 
   const subject = `Nueva reserva · ${shortDate(fecha)} · ${hora} · ${reservation.guest_count} ${
     reservation.guest_count === 1 ? "persona" : "personas"
@@ -272,6 +352,9 @@ export async function sendInternalNewReservationEmail(supabase: DB, reservationI
     `Hora: ${hora}${session?.hora_fin ? ` – ${String(session.hora_fin).slice(0, 5)}` : ""}`,
     `Personas: ${reservation.guest_count}`,
     `Total: ${money(Number(reservation.total ?? 0), currency)}`,
+    Number(reservation.discount ?? 0) > 0
+      ? `Promoción: ${reservation.promotion_name ?? reservation.promotion_code ?? "Aplicada"} · descuento ${money(Number(reservation.discount), currency)}`
+      : "",
     "",
     `Cliente: ${customerName}`,
     `Email: ${customer?.email ?? "—"}`,
@@ -279,7 +362,15 @@ export async function sendInternalNewReservationEmail(supabase: DB, reservationI
     "",
     `Origen: ${reservation.source === "admin" ? "Panel administrativo" : "Web"}`,
     `Estado: ${reservationStatusEs[reservation.reservation_status] ?? reservation.reservation_status}`,
-    `Pago: ${reservation.payment_status === "paid" ? "Pagado" : reservation.payment_status === "partial" ? "Pagado parcialmente" : "No pagado"}`,
+    `Pago: ${
+      reservation.payment_status === "paid"
+        ? "Pagado"
+        : reservation.payment_status === "partial"
+          ? "Pagado parcialmente"
+          : reservation.payment_status === "complimentary"
+            ? "Cortesía · no requiere pago"
+            : "No pagado"
+    }`,
     reservation.notes ? `\nNotas: ${reservation.notes}` : "",
     reservation.dietary_notes ? `Restricciones: ${reservation.dietary_notes}` : "",
   ]
