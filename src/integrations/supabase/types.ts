@@ -187,133 +187,6 @@ export type Database = {
           },
         ]
       }
-      promotion_redemptions: {
-        Row: {
-          created_at: string
-          customer_id: string
-          discount_amount: number
-          discount_type: string
-          discount_value: number
-          id: string
-          promotion_code: string | null
-          promotion_id: string
-          promotion_name: string
-          reservation_id: string
-        }
-        Insert: {
-          created_at?: string
-          customer_id: string
-          discount_amount: number
-          discount_type: string
-          discount_value: number
-          id?: string
-          promotion_code?: string | null
-          promotion_id: string
-          promotion_name: string
-          reservation_id: string
-        }
-        Update: {
-          created_at?: string
-          customer_id?: string
-          discount_amount?: number
-          discount_type?: string
-          discount_value?: number
-          id?: string
-          promotion_code?: string | null
-          promotion_id?: string
-          promotion_name?: string
-          reservation_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "promotion_redemptions_customer_id_fkey"
-            columns: ["customer_id"]
-            isOneToOne: false
-            referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "promotion_redemptions_promotion_id_fkey"
-            columns: ["promotion_id"]
-            isOneToOne: false
-            referencedRelation: "promotions"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "promotion_redemptions_reservation_id_fkey"
-            columns: ["reservation_id"]
-            isOneToOne: true
-            referencedRelation: "reservations"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      promotions: {
-        Row: {
-          active: boolean
-          application_type: string
-          code: string | null
-          created_at: string
-          description: string
-          discount_type: string
-          discount_value: number
-          ends_on: string | null
-          id: string
-          max_discount: number | null
-          max_guests: number | null
-          min_guests: number
-          name: string
-          priority: number
-          session_ids: string[]
-          starts_on: string | null
-          updated_at: string
-          usage_limit: number | null
-          usage_limit_per_customer: number | null
-        }
-        Insert: {
-          active?: boolean
-          application_type: string
-          code?: string | null
-          created_at?: string
-          description?: string
-          discount_type: string
-          discount_value?: number
-          ends_on?: string | null
-          id?: string
-          max_discount?: number | null
-          max_guests?: number | null
-          min_guests?: number
-          name: string
-          priority?: number
-          session_ids?: string[]
-          starts_on?: string | null
-          updated_at?: string
-          usage_limit?: number | null
-          usage_limit_per_customer?: number | null
-        }
-        Update: {
-          active?: boolean
-          application_type?: string
-          code?: string | null
-          created_at?: string
-          description?: string
-          discount_type?: string
-          discount_value?: number
-          ends_on?: string | null
-          id?: string
-          max_discount?: number | null
-          max_guests?: number | null
-          min_guests?: number
-          name?: string
-          priority?: number
-          session_ids?: string[]
-          starts_on?: string | null
-          updated_at?: string
-          usage_limit?: number | null
-          usage_limit_per_customer?: number | null
-        }
-        Relationships: []
-      }
       refunds: {
         Row: {
           amount: number
@@ -397,9 +270,6 @@ export type Database = {
           id: string
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
-          promotion_code: string | null
-          promotion_id: string | null
-          promotion_name: string | null
           reservation_status: Database["public"]["Enums"]["reservation_status"]
           session_id: string
           source: string
@@ -425,9 +295,6 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
-          promotion_code?: string | null
-          promotion_id?: string | null
-          promotion_name?: string | null
           reservation_status?: Database["public"]["Enums"]["reservation_status"]
           session_id: string
           source?: string
@@ -453,9 +320,6 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
-          promotion_code?: string | null
-          promotion_id?: string | null
-          promotion_name?: string | null
           reservation_status?: Database["public"]["Enums"]["reservation_status"]
           session_id?: string
           source?: string
@@ -469,13 +333,6 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reservations_promotion_id_fkey"
-            columns: ["promotion_id"]
-            isOneToOne: false
-            referencedRelation: "promotions"
             referencedColumns: ["id"]
           },
           {
@@ -785,9 +642,6 @@ export type Database = {
           id: string
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
-          promotion_code: string | null
-          promotion_id: string | null
-          promotion_name: string | null
           reservation_status: Database["public"]["Enums"]["reservation_status"]
           session_id: string
           source: string
@@ -836,9 +690,6 @@ export type Database = {
           id: string
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
-          promotion_code: string | null
-          promotion_id: string | null
-          promotion_name: string | null
           reservation_status: Database["public"]["Enums"]["reservation_status"]
           session_id: string
           source: string
@@ -895,9 +746,6 @@ export type Database = {
           id: string
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
-          promotion_code: string | null
-          promotion_id: string | null
-          promotion_name: string | null
           reservation_status: Database["public"]["Enums"]["reservation_status"]
           session_id: string
           source: string
@@ -922,36 +770,11 @@ export type Database = {
           _last_name: string
           _notes?: string
           _phone: string
-          _promo_code?: string
           _session_id: string
         }
         Returns: {
           booking_code: string
-          discount: number
           guest_count: number
-          payment_status: Database["public"]["Enums"]["payment_status"]
-          promotion_code: string | null
-          promotion_name: string | null
-          reservation_status: Database["public"]["Enums"]["reservation_status"]
-          subtotal: number
-          total: number
-        }[]
-      }
-      public_price_quote: {
-        Args: {
-          _email?: string
-          _guest_count: number
-          _phone?: string
-          _promo_code?: string
-          _session_id: string
-        }
-        Returns: {
-          discount: number
-          promotion_application_type: string | null
-          promotion_code: string | null
-          promotion_id: string | null
-          promotion_name: string | null
-          subtotal: number
           total: number
         }[]
       }
@@ -996,9 +819,6 @@ export type Database = {
           id: string
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
-          promotion_code: string | null
-          promotion_id: string | null
-          promotion_name: string | null
           reservation_status: Database["public"]["Enums"]["reservation_status"]
           session_id: string
           source: string
