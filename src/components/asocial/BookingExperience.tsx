@@ -60,7 +60,7 @@ function tiktokSessionEventParams(session: PublicSession, guests = 1) {
   };
 }
 
-export function BookingExperience({ lang: langProp }: { lang?: string } = {}) {
+export function BookingExperience({ lang: langProp }: { lang?: string | undefined } = {}) {
   const queryClient = useQueryClient();
   const lang: Lang = parseLang(langProp);
   const t = bookingCopy[lang];
