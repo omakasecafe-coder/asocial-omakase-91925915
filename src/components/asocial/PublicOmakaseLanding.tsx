@@ -148,9 +148,15 @@ export function PublicOmakaseLanding() {
             <img src={logoLight.url} alt="asocial · café omakase" className="h-9 w-auto" />
           </a>
           <nav className="hidden items-center gap-8 text-xs tracking-wide text-lino/70 md:flex">
-            <a href="#experiencia" className="transition-colors hover:text-lino">{t.navExperience}</a>
-            <a href="#recorrido" className="transition-colors hover:text-lino">{t.navJourney}</a>
-            <a href="#detalles" className="transition-colors hover:text-lino">{t.navDetails}</a>
+            <a href="#experiencia" className="transition-colors hover:text-lino">
+              {t.navExperience}
+            </a>
+            <a href="#recorrido" className="transition-colors hover:text-lino">
+              {t.navJourney}
+            </a>
+            <a href="#detalles" className="transition-colors hover:text-lino">
+              {t.navDetails}
+            </a>
           </nav>
           <div className="flex items-center gap-3">
             <div className="flex rounded-full border border-white/20 p-0.5 text-[10px] tracking-[0.14em]">
@@ -179,7 +185,10 @@ export function PublicOmakaseLanding() {
       </header>
 
       <main>
-        <section id="inicio" className="relative flex min-h-[760px] items-end bg-carbon text-lino md:min-h-screen">
+        <section
+          id="inicio"
+          className="relative flex min-h-[760px] items-end bg-carbon text-lino md:min-h-screen"
+        >
           <img
             src="/asocial-omakase-hero.webp"
             alt="Experiencia de café omakase en una barra de madera"
@@ -192,7 +201,9 @@ export function PublicOmakaseLanding() {
             <h1 className="mt-6 max-w-3xl text-5xl font-medium leading-[0.95] tracking-[-0.045em] sm:text-6xl md:text-8xl">
               Trust your barista.
             </h1>
-            <p className="mt-7 max-w-xl text-base leading-relaxed text-lino/78 md:text-lg">{t.heroLead}</p>
+            <p className="mt-7 max-w-xl text-base leading-relaxed text-lino/78 md:text-lg">
+              {t.heroLead}
+            </p>
             <p className="mt-4 text-xs tracking-wide text-lino/55">{t.heroMeta}</p>
             <div className="mt-9 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
               <a
@@ -206,7 +217,10 @@ export function PublicOmakaseLanding() {
                 <p className="mt-1 text-sm font-medium text-lino">{t.offerPrice}</p>
               </div>
             </div>
-            <a href="#experiencia" className="mt-12 inline-flex items-center gap-2 text-xs text-lino/55 hover:text-lino">
+            <a
+              href="#experiencia"
+              className="mt-12 inline-flex items-center gap-2 text-xs text-lino/55 hover:text-lino"
+            >
               {t.discover} <ArrowDown className="h-3.5 w-3.5" />
             </a>
           </div>
@@ -216,22 +230,35 @@ export function PublicOmakaseLanding() {
           <div className="mx-auto grid max-w-6xl gap-12 md:grid-cols-[0.75fr_1.25fr] md:gap-20">
             <p className="text-[11px] uppercase tracking-[0.25em] text-nogal/60">{t.introKicker}</p>
             <div>
-              <h2 className="max-w-3xl text-3xl leading-tight tracking-[-0.025em] md:text-5xl">{t.introTitle}</h2>
-              <p className="mt-8 max-w-2xl text-base leading-8 text-nogal/80 md:text-lg">{t.introBody}</p>
+              <h2 className="max-w-3xl text-3xl leading-tight tracking-[-0.025em] md:text-5xl">
+                {t.introTitle}
+              </h2>
+              <p className="mt-8 max-w-2xl text-base leading-8 text-nogal/80 md:text-lg">
+                {t.introBody}
+              </p>
             </div>
           </div>
         </section>
 
         <section id="recorrido" className="bg-carbon px-5 py-24 text-lino md:px-10 md:py-36">
           <div className="mx-auto max-w-6xl">
-            <p className="text-[11px] uppercase tracking-[0.25em] text-lino/45">{t.journeyKicker}</p>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-lino/45">
+              {t.journeyKicker}
+            </p>
             <div className="mt-5 grid gap-8 md:grid-cols-2 md:items-end">
-              <h2 className="max-w-xl text-3xl leading-tight tracking-[-0.025em] md:text-5xl">{t.journeyTitle}</h2>
-              <p className="max-w-lg text-sm leading-7 text-lino/60 md:justify-self-end">{t.journeyBody}</p>
+              <h2 className="max-w-xl text-3xl leading-tight tracking-[-0.025em] md:text-5xl">
+                {t.journeyTitle}
+              </h2>
+              <p className="max-w-lg text-sm leading-7 text-lino/60 md:justify-self-end">
+                {t.journeyBody}
+              </p>
             </div>
             <div className="mt-16 border-t border-lino/15">
               {t.moments.map((moment) => (
-                <article key={moment.number} className="grid gap-4 border-b border-lino/15 py-8 md:grid-cols-[0.2fr_0.55fr_1fr] md:gap-10 md:py-10">
+                <article
+                  key={moment.number}
+                  className="grid gap-4 border-b border-lino/15 py-8 md:grid-cols-[0.2fr_0.55fr_1fr] md:gap-10 md:py-10"
+                >
                   <span className="text-xs tracking-[0.2em] text-lino/35">{moment.number}</span>
                   <h3 className="text-xl text-lino md:text-2xl">{moment.title}</h3>
                   <p className="max-w-xl text-sm leading-7 text-lino/58">{moment.body}</p>
@@ -243,7 +270,9 @@ export function PublicOmakaseLanding() {
 
         <section id="detalles" className="px-5 py-24 md:px-10 md:py-36">
           <div className="mx-auto max-w-6xl">
-            <p className="text-[11px] uppercase tracking-[0.25em] text-nogal/60">{t.detailsKicker}</p>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-nogal/60">
+              {t.detailsKicker}
+            </p>
             <h2 className="mt-5 text-3xl tracking-[-0.025em] md:text-5xl">{t.detailsTitle}</h2>
             <div className="mt-14 grid border-y border-nogal/20 sm:grid-cols-2 lg:grid-cols-4">
               <Detail icon={Clock} label={t.duration} value={t.durationValue} />
@@ -257,7 +286,10 @@ export function PublicOmakaseLanding() {
                 <p className="mt-3 text-sm text-nogal/50 line-through">{t.priceRegular}</p>
                 <p className="mt-1 text-2xl font-medium text-carbon">{t.priceOffer}</p>
               </div>
-              <a href={bookingUrl} className="inline-flex items-center justify-center gap-2 rounded-full bg-carbon px-6 py-3.5 text-sm font-medium text-lino transition-transform hover:-translate-y-0.5">
+              <a
+                href={bookingUrl}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-carbon px-6 py-3.5 text-sm font-medium text-lino transition-transform hover:-translate-y-0.5"
+              >
                 {t.reserveExperience} <ArrowUpRight className="h-4 w-4" />
               </a>
             </div>
@@ -271,7 +303,10 @@ export function PublicOmakaseLanding() {
             <p className="text-[11px] uppercase tracking-[0.25em] text-lino/45">{t.ctaKicker}</p>
             <h2 className="mt-6 text-4xl tracking-[-0.035em] md:text-6xl">{t.ctaTitle}</h2>
             <p className="mx-auto mt-6 max-w-lg text-sm leading-7 text-lino/65">{t.ctaBody}</p>
-            <a href={bookingUrl} className="mt-9 inline-flex items-center gap-2 rounded-full bg-lino px-7 py-3.5 text-sm font-medium text-carbon transition-transform hover:-translate-y-0.5">
+            <a
+              href={bookingUrl}
+              className="mt-9 inline-flex items-center gap-2 rounded-full bg-lino px-7 py-3.5 text-sm font-medium text-carbon transition-transform hover:-translate-y-0.5"
+            >
               {t.reserveExperience} <ArrowUpRight className="h-4 w-4" />
             </a>
           </div>
