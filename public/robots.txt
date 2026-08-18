@@ -13,4 +13,4 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://reservas.asocialcafe.com/sitemap.xml
+Sitemap: https://asocialcafe.com/sitemap.xml
