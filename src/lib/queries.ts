@@ -41,9 +41,22 @@ export const staffUsersQuery = () =>
 export const myAccessQuery = () =>
   queryOptions({
     queryKey: ["my-access"],
-    queryFn: () => getMyAccess(),
+    queryFn: async () => {
+      try {
+        return await getMyAccess();
+      } catch (error) {
+        // Sin sesión (p. ej. durante el cierre de sesión) no hay acceso que mostrar.
+        const message = error instanceof Error ? error.message : String(error);
+        if (message.toLowerCase().includes("unauthorized")) {
+          return { isAdmin: false, modules: null as string[] | null };
+        }
+        throw error;
+      }
+    },
+    retry: false,
     staleTime: 60_000,
   });
+
 
 export type Workspace = Awaited<ReturnType<typeof getWorkspace>>;
 export type SessionRow = Workspace["sessions"][number];
