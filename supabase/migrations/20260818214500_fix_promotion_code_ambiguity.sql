@@ -56,14 +56,14 @@ begin
          promotion_row.max_guests is null
          or _guest_count <= promotion_row.max_guests
        )
-       and (
-         promotion_row.starts_on is null
-         or selected_session.fecha >= promotion_row.starts_on
-       )
-       and (
-         promotion_row.ends_on is null
-         or selected_session.fecha <= promotion_row.ends_on
-       )
+      and (
+        promotion_row.starts_on is null
+        or current_date >= promotion_row.starts_on
+      )
+      and (
+        promotion_row.ends_on is null
+        or current_date <= promotion_row.ends_on
+      )
        and (
          coalesce(array_length(promotion_row.session_ids, 1), 0) = 0
          or _session_id = any(promotion_row.session_ids)
