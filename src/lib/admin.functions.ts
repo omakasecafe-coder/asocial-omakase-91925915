@@ -331,6 +331,30 @@ export const setPromotionActive = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const deletePromotion = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { logAudit } = await import("@/lib/admin.server");
+    const { data: promotion, error: promotionError } = await context.supabase
+      .from("promotions")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (promotionError) throw new Error(promotionError.message);
+    if (!promotion) throw new Error("La promoción ya no existe");
+
+    const { error } = await context.supabase.from("promotions").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    await logAudit(context.supabase, context.userId, {
+      action: "delete_promotion",
+      entityType: "promotion",
+      entityId: data.id,
+      oldValues: promotion,
+    });
+    return { ok: true };
+  });
+
 /* ------------------------------- reservations ------------------------------ */
 
 export const createReservationAdmin = createServerFn({ method: "POST" })
