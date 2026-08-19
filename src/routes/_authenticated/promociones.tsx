@@ -210,7 +210,7 @@ function PromotionsPage() {
             <AlertDialogTitle>¿Eliminar esta promoción?</AlertDialogTitle>
             <AlertDialogDescription>
               {deleting
-                ? `Se eliminará “${deleting.name}” de forma permanente. Esta acción solo se permite si nunca fue utilizada.`
+                ? `Se eliminará “${deleting.name}” de forma permanente. Las reservas existentes conservarán sus montos y descuentos en los reportes.`
                 : "Esta acción no se puede deshacer."}
             </AlertDialogDescription>
           </AlertDialogHeader>

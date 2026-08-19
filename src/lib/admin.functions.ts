@@ -336,27 +336,13 @@ export const deletePromotion = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
     const { logAudit } = await import("@/lib/admin.server");
-    const [{ data: promotion, error: promotionError }, redemptions, reservations] =
-      await Promise.all([
-        context.supabase.from("promotions").select("*").eq("id", data.id).maybeSingle(),
-        context.supabase
-          .from("promotion_redemptions")
-          .select("id", { count: "exact", head: true })
-          .eq("promotion_id", data.id),
-        context.supabase
-          .from("reservations")
-          .select("id", { count: "exact", head: true })
-          .eq("promotion_id", data.id),
-      ]);
-
-    const lookupError = promotionError || redemptions.error || reservations.error;
-    if (lookupError) throw new Error(lookupError.message);
+    const { data: promotion, error: promotionError } = await context.supabase
+      .from("promotions")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (promotionError) throw new Error(promotionError.message);
     if (!promotion) throw new Error("La promoción ya no existe");
-    if ((redemptions.count ?? 0) > 0 || (reservations.count ?? 0) > 0) {
-      throw new Error(
-        "Esta promoción ya tiene reservas asociadas. Páusala para conservar el historial.",
-      );
-    }
 
     const { error } = await context.supabase.from("promotions").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
