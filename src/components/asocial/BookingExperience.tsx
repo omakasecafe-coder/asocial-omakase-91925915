@@ -477,34 +477,6 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                 })
               )}
             </div>
-
-            <section className="mt-10 border-t border-border/70 pt-8">
-              <h2 className="text-base font-medium">{t.aboutTitle}</h2>
-              <div className="mt-4 space-y-4 text-sm leading-relaxed text-muted-foreground">
-                <p>{t.aboutP1}</p>
-                <p>{t.aboutP2}</p>
-              </div>
-              <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
-                <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                    {t.formatLabel}
-                  </dt>
-                  <dd className="mt-1 text-foreground">{t.formatValue}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                    {t.seatsLabel}
-                  </dt>
-                  <dd className="mt-1 text-foreground">{t.seatsValue}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs uppercase tracking-[0.14em] text-muted-foreground">
-                    {t.bookingLabel}
-                  </dt>
-                  <dd className="mt-1 text-foreground">{t.bookingValue}</dd>
-                </div>
-              </dl>
-            </section>
           </section>
         ) : null}
 
