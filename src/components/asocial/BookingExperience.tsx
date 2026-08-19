@@ -1,15 +1,31 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { AlertTriangle, BadgePercent, CheckCircle2, Instagram, Phone } from "lucide-react";
+import {
+  AlertTriangle,
+  BadgePercent,
+  CalendarDays,
+  CheckCircle2,
+  ChevronDown,
+  Instagram,
+  Minus,
+  Phone,
+  Plus,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { BookingStepper } from "@/components/asocial/BookingStepper";
 import { AvailabilityBadge } from "@/components/asocial/AvailabilityBadge";
 import { EmptyState } from "@/components/asocial/EmptyState";
 import { PhoneInput } from "@/components/asocial/PhoneInput";
+import {
+  BookingDetailsStepLegacy,
+  type BookingContactErrors,
+  type BookingContactForm,
+} from "@/components/asocial/BookingDetailsStepLegacy";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 import bgLino from "@/assets/background-lino.png.asset.json";
 import bgCarbon from "@/assets/background-carbon.png.asset.json";
@@ -34,7 +50,7 @@ import { identifyTikTokUser, trackEvent, trackMetaEvent, trackTikTokEvent } from
 import { cn } from "@/lib/utils";
 
 type Step = 1 | 2 | 3 | 4;
-type ContactErrors = Partial<Record<"firstName" | "email" | "phone", string>>;
+const USE_LEGACY_BOOKING_DETAILS = false;
 
 function sessionEventParams(session: PublicSession, guests = 1) {
   const value = Number(session.precio_por_persona) * guests;
@@ -85,7 +101,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
   const [step, setStep] = useState<Step>(1);
   const [selected, setSelected] = useState<PublicSession | null>(null);
   const [guests, setGuests] = useState(1);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<BookingContactForm>({
     firstName: "",
     lastName: "",
     phone: "",
@@ -93,7 +109,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
     dietary: "",
     notes: "",
   });
-  const [formErrors, setFormErrors] = useState<ContactErrors>({});
+  const [formErrors, setFormErrors] = useState<BookingContactErrors>({});
   const [confirmation, setConfirmation] = useState<{
     code: string;
     subtotal: number;
@@ -108,6 +124,8 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
   const [priceQuote, setPriceQuote] = useState<PublicPriceQuote | null>(null);
   const [promotionError, setPromotionError] = useState("");
   const [quoteLoading, setQuoteLoading] = useState(false);
+  const [showOptionalDetails, setShowOptionalDetails] = useState(false);
+  const [showPromoCode, setShowPromoCode] = useState(false);
 
   const subtotal = useMemo(
     () => (selected ? Number(selected.precio_por_persona) * guests : 0),
@@ -148,16 +166,39 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
   }, [step, selected?.id, guests, appliedCode, form.email, form.phone]);
 
   const applyPromotion = useMutation({
-    mutationFn: (code: string) => quoteRequest(code),
-    onSuccess: (quote, code) => {
+    mutationFn: async (code: string) => {
+      const [automaticQuote, codeQuote] = await Promise.all([quoteRequest(""), quoteRequest(code)]);
+      if (codeQuote.promotionApplicationType !== "code" || !codeQuote.promotionCode) {
+        throw new Error(t.errPromotion);
+      }
+      return { automaticQuote, codeQuote, code };
+    },
+    onSuccess: ({ automaticQuote, codeQuote, code }) => {
+      if (codeQuote.discount <= automaticQuote.discount) {
+        setAppliedCode("");
+        setPriceQuote(automaticQuote);
+        setPromotionError(
+          t.betterPromotionKept.replace("{amount}", money(automaticQuote.discount)),
+        );
+        trackEvent("coupon_rejected", {
+          coupon: code,
+          reason: "automatic_promotion_is_better",
+          automatic_discount: automaticQuote.discount,
+          code_discount: codeQuote.discount,
+          currency: "PEN",
+        });
+        return;
+      }
+
       setAppliedCode(code);
-      setPriceQuote(quote);
+      setPriceQuote(codeQuote);
       setPromotionError("");
+      setShowPromoCode(false);
       trackEvent("coupon_apply", {
-        coupon: quote.promotionCode ?? code,
-        promotion_name: quote.promotionName,
-        discount: quote.discount,
-        value: quote.total,
+        coupon: codeQuote.promotionCode ?? code,
+        promotion_name: codeQuote.promotionName,
+        discount: codeQuote.discount,
+        value: codeQuote.total,
         currency: "PEN",
       });
     },
@@ -175,7 +216,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
     document.documentElement.lang = lang;
   }, [lang]);
 
-  const clearFormError = (key: keyof ContactErrors) => {
+  const clearFormError = (key: keyof BookingContactErrors) => {
     setFormErrors((current) => {
       if (!current[key]) return current;
       const next = { ...current };
@@ -185,7 +226,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
   };
 
   const validateContact = () => {
-    const errors: ContactErrors = {};
+    const errors: BookingContactErrors = {};
     const email = form.email.trim();
 
     if (!form.firstName.trim()) errors.firstName = t.errFirstName;
@@ -208,6 +249,30 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
     }
 
     return Object.keys(errors).length === 0;
+  };
+
+  const continueToReview = () => {
+    if (!selected) return;
+    if (!validateContact()) {
+      toast(t.errReview);
+      return;
+    }
+    trackEvent("begin_checkout", {
+      guests,
+      value: subtotal,
+      currency: "PEN",
+      language: lang,
+      items: analyticsItems(selected, guests),
+    });
+    trackMetaEvent("InitiateCheckout", sessionEventParams(selected, guests));
+    void (async () => {
+      await identifyTikTokUser({ email: form.email, phone: form.phone });
+      trackTikTokEvent("ClickButton", {
+        ...tiktokSessionEventParams(selected, guests),
+        button_name: t.continue,
+      });
+    })();
+    setStep(3);
   };
 
   const reserve = useMutation({
@@ -293,7 +358,12 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
       className="flex min-h-screen flex-col bg-background bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: `url(${bgLino.url})` }}
     >
-      <header className="sticky top-0 z-50 px-5 pb-6 pt-7 text-lino md:px-10 md:pb-8 md:pt-9">
+      <header
+        className={cn(
+          "sticky top-0 z-50 px-5 text-lino md:px-10 md:pb-8 md:pt-9",
+          step === 1 ? "pb-6 pt-7" : "pb-4 pt-4 md:pb-8 md:pt-9",
+        )}
+      >
         <span
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-20 bg-cover bg-center bg-no-repeat"
@@ -308,11 +378,21 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
           <img
             src={logoLight.url}
             alt="asocial · café omakase"
-            className="h-11 w-auto drop-shadow-lg md:h-[3.25rem]"
+            className={cn("w-auto drop-shadow-lg md:h-[3.25rem]", step === 1 ? "h-11" : "h-8")}
           />
 
-          <div className="mt-4 flex items-start justify-between gap-4">
-            <p className="max-w-md text-sm font-medium leading-snug text-lino drop-shadow-md md:text-base">
+          <div
+            className={cn(
+              "flex items-start justify-between gap-4",
+              step === 1 ? "mt-4" : "mt-2 justify-end md:mt-4 md:justify-between",
+            )}
+          >
+            <p
+              className={cn(
+                "max-w-md text-sm font-medium leading-snug text-lino drop-shadow-md md:block md:text-base",
+                step > 1 && "hidden",
+              )}
+            >
               {t.tagline}
             </p>
             <LanguageSwitch current={lang} />
@@ -427,135 +507,175 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
         ) : null}
 
         {step === 2 && selected ? (
-          <section className="card-soft bg-card/85 p-6 md:p-8">
-            <h2 className="text-xl font-medium">{t.whoTitle}</h2>
-            <SessionSummary session={selected} lang={lang} />
+          USE_LEGACY_BOOKING_DETAILS ? (
+            <BookingDetailsStepLegacy
+              session={selected}
+              lang={lang}
+              t={t}
+              guests={guests}
+              setGuests={setGuests}
+              form={form}
+              setForm={setForm}
+              formErrors={formErrors}
+              clearFormError={clearFormError}
+              onContinue={continueToReview}
+              onBack={() => setStep(1)}
+            />
+          ) : (
+            <section>
+              <h1 className="text-2xl font-medium tracking-tight">{t.whoTitle}</h1>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                {t.whoSubtitle}
+              </p>
 
-            <div className="mt-8 space-y-4">
-              <Field label={t.guestsLabel}>
-                <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: 6 }, (_, i) => i + 1).map((n) => {
-                    const disabled = n > selected.available;
-                    return (
-                      <button
-                        key={n}
-                        disabled={disabled}
-                        onClick={() => setGuests(n)}
+              <SessionSummary
+                session={selected}
+                lang={lang}
+                label={t.sessionSummary}
+                changeLabel={t.changeSession}
+                onChange={() => setStep(1)}
+              />
+
+              <section className="card-soft mt-5 bg-card/85 p-5 md:p-6">
+                <div className="flex items-center justify-between gap-5">
+                  <div>
+                    <Label className="text-sm font-medium text-foreground">{t.guestsLabel}</Label>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {seatsLabelI18n(selected.available, lang)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 rounded-full border border-border bg-background/55 p-1">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full"
+                      disabled={guests <= 1}
+                      aria-label={lang === "en" ? "Remove one guest" : "Quitar una persona"}
+                      onClick={() => setGuests((current) => Math.max(1, current - 1))}
+                    >
+                      <Minus className="h-4 w-4" />
+                    </Button>
+                    <span className="min-w-6 text-center text-lg font-medium tabular-nums">
+                      {guests}
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 rounded-full"
+                      disabled={guests >= Math.min(selected.available, 12)}
+                      aria-label={lang === "en" ? "Add one guest" : "Agregar una persona"}
+                      onClick={() =>
+                        setGuests((current) => Math.min(selected.available, 12, current + 1))
+                      }
+                    >
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </section>
+
+              <section className="card-soft mt-5 bg-card/85 p-5 md:p-6">
+                <h2 className="text-base font-medium">{t.contactTitle}</h2>
+                <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                  {t.contactHint}
+                </p>
+
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <Field label={t.firstName} fieldKey="firstName" error={formErrors.firstName}>
+                    <Input
+                      autoComplete="given-name"
+                      value={form.firstName}
+                      onChange={(event) => {
+                        setForm({ ...form, firstName: event.target.value });
+                        clearFormError("firstName");
+                      }}
+                      className="bg-card"
+                    />
+                  </Field>
+                  <Field label={t.lastName}>
+                    <Input
+                      autoComplete="family-name"
+                      value={form.lastName}
+                      onChange={(event) => setForm({ ...form, lastName: event.target.value })}
+                      className="bg-card"
+                    />
+                  </Field>
+                  <div className="space-y-2" data-booking-field="phone">
+                    <Label className="text-xs text-muted-foreground">WhatsApp</Label>
+                    <PhoneInput
+                      value={form.phone}
+                      onChange={(phone) => {
+                        setForm({ ...form, phone });
+                        clearFormError("phone");
+                      }}
+                      placeholder={t.phonePlaceholder}
+                    />
+                    {formErrors.phone ? <FieldError>{formErrors.phone}</FieldError> : null}
+                  </div>
+                  <Field label={t.email} fieldKey="email" error={formErrors.email}>
+                    <Input
+                      type="email"
+                      autoComplete="email"
+                      value={form.email}
+                      onChange={(event) => {
+                        setForm({ ...form, email: event.target.value });
+                        clearFormError("email");
+                      }}
+                      className="bg-card"
+                    />
+                  </Field>
+                </div>
+
+                <Collapsible
+                  className="mt-5 border-t border-border/70 pt-3"
+                  open={showOptionalDetails}
+                  onOpenChange={setShowOptionalDetails}
+                >
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between py-2 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <span>{showOptionalDetails ? t.hideOptionalDetails : t.optionalDetails}</span>
+                      <ChevronDown
                         className={cn(
-                          "h-10 w-10 rounded-full border text-sm transition-colors duration-200",
-                          disabled
-                            ? "cursor-not-allowed border-border/50 text-muted-foreground/40"
-                            : guests === n
-                              ? "border-carbon bg-carbon text-lino"
-                              : "border-border text-foreground hover:border-nogal/40",
+                          "h-4 w-4 transition-transform",
+                          showOptionalDetails && "rotate-180",
                         )}
-                      >
-                        {n}
-                      </button>
-                    );
-                  })}
-                </div>
-              </Field>
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-4 pt-3">
+                    <Field label={t.dietary}>
+                      <Textarea
+                        value={form.dietary}
+                        onChange={(event) => setForm({ ...form, dietary: event.target.value })}
+                        className="min-h-20 bg-card"
+                      />
+                    </Field>
+                    <Field label={t.notes}>
+                      <Textarea
+                        value={form.notes}
+                        onChange={(event) => setForm({ ...form, notes: event.target.value })}
+                        className="min-h-20 bg-card"
+                      />
+                    </Field>
+                  </CollapsibleContent>
+                </Collapsible>
+              </section>
 
-              <div className="grid gap-4">
-                <Field label={t.firstName} fieldKey="firstName" error={formErrors.firstName}>
-                  <Input
-                    value={form.firstName}
-                    onChange={(e) => {
-                      setForm({ ...form, firstName: e.target.value });
-                      clearFormError("firstName");
-                    }}
-                    className="bg-card"
-                  />
-                </Field>
-                <Field label={t.lastName}>
-                  <Input
-                    value={form.lastName}
-                    onChange={(e) => setForm({ ...form, lastName: e.target.value })}
-                    className="bg-card"
-                  />
-                </Field>
-                <Field label={t.email} fieldKey="email" error={formErrors.email}>
-                  <Input
-                    type="email"
-                    value={form.email}
-                    onChange={(e) => {
-                      setForm({ ...form, email: e.target.value });
-                      clearFormError("email");
-                    }}
-                    className="bg-card"
-                  />
-                </Field>
-                <div className="space-y-2" data-booking-field="phone">
-                  <PhoneInput
-                    value={form.phone}
-                    onChange={(phone) => {
-                      setForm({ ...form, phone });
-                      clearFormError("phone");
-                    }}
-                    placeholder={t.phonePlaceholder}
-                  />
-                  {formErrors.phone ? <FieldError>{formErrors.phone}</FieldError> : null}
-                </div>
+              <div className="mt-6 space-y-2">
+                <Button className="w-full rounded-xl" size="lg" onClick={continueToReview}>
+                  {t.continue}
+                </Button>
+                <Button className="w-full" variant="ghost" onClick={() => setStep(1)}>
+                  {t.back}
+                </Button>
               </div>
-
-              <Field label={t.dietary}>
-                <Textarea
-                  value={form.dietary}
-                  onChange={(e) => setForm({ ...form, dietary: e.target.value })}
-                  className="min-h-20 bg-card"
-                />
-              </Field>
-              <Field label={t.notes}>
-                <Textarea
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  className="min-h-20 bg-card"
-                />
-              </Field>
-            </div>
-
-            <div className="mt-8 flex gap-2">
-              <Button
-                onClick={() => {
-                  if (!validateContact()) {
-                    toast(t.errReview);
-                    return;
-                  }
-                  trackEvent("begin_checkout", {
-                    guests,
-                    value: subtotal,
-                    currency: "PEN",
-                    language: lang,
-                    items: analyticsItems(selected, guests),
-                  });
-                  trackMetaEvent(
-                    "InitiateCheckout",
-                    selected
-                      ? sessionEventParams(selected, guests)
-                      : {
-                          currency: "PEN",
-                          num_items: guests,
-                          value: subtotal,
-                        },
-                  );
-                  void (async () => {
-                    await identifyTikTokUser({ email: form.email, phone: form.phone });
-                    trackTikTokEvent("ClickButton", {
-                      ...tiktokSessionEventParams(selected, guests),
-                      button_name: "Continuar reserva",
-                    });
-                  })();
-                  setStep(3);
-                }}
-              >
-                {t.continue}
-              </Button>
-              <Button variant="ghost" onClick={() => setStep(1)}>
-                {t.back}
-              </Button>
-            </div>
-          </section>
+            </section>
+          )
         ) : null}
 
         {step === 3 && selected ? (
@@ -598,47 +718,71 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
               </div>
             </div>
 
-            <div className="mt-4 rounded-xl border border-border bg-card/70 p-4">
-              <Label htmlFor="promo-code" className="text-xs text-muted-foreground">
-                {t.promoCode}
-              </Label>
-              <div className="mt-2 flex gap-2">
-                <Input
-                  id="promo-code"
-                  value={promoInput}
-                  onChange={(event) => {
-                    setPromoInput(event.target.value.toUpperCase());
-                    setPromotionError("");
-                  }}
-                  placeholder={t.promoPlaceholder}
-                  disabled={applyPromotion.isPending}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={!promoInput.trim() || applyPromotion.isPending}
-                  onClick={() => applyPromotion.mutate(promoInput.trim().toUpperCase())}
-                >
-                  {applyPromotion.isPending ? t.applying : t.apply}
-                </Button>
-              </div>
-              {promotionError ? (
-                <p className="mt-2 text-xs font-medium text-arcilla">{promotionError}</p>
-              ) : null}
-              {appliedCode ? (
+            <Collapsible
+              className="mt-4 rounded-xl border border-border bg-card/70"
+              open={showPromoCode || Boolean(appliedCode)}
+              onOpenChange={setShowPromoCode}
+            >
+              <CollapsibleTrigger asChild>
                 <button
                   type="button"
-                  className="mt-2 text-xs text-muted-foreground underline underline-offset-4"
-                  onClick={() => {
-                    setAppliedCode("");
-                    setPromoInput("");
-                    setPromotionError("");
-                  }}
+                  className="flex w-full items-center justify-between gap-3 p-4 text-left"
                 >
-                  {t.removeCode}
+                  <span className="flex items-center gap-2 text-sm font-medium">
+                    <BadgePercent className="h-4 w-4 text-musgo" strokeWidth={1.5} />
+                    {t.promoCode}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform",
+                      (showPromoCode || appliedCode) && "rotate-180",
+                    )}
+                  />
                 </button>
-              ) : null}
-            </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="border-t border-border px-4 pb-4 pt-3">
+                <p className="text-xs leading-relaxed text-muted-foreground">{t.promoCodeHint}</p>
+                <div className="mt-3 flex gap-2">
+                  <Input
+                    id="promo-code"
+                    value={promoInput}
+                    onChange={(event) => {
+                      setPromoInput(event.target.value.toUpperCase());
+                      setPromotionError("");
+                    }}
+                    placeholder={t.promoPlaceholder}
+                    disabled={applyPromotion.isPending || Boolean(appliedCode)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={
+                      !promoInput.trim() || applyPromotion.isPending || Boolean(appliedCode)
+                    }
+                    onClick={() => applyPromotion.mutate(promoInput.trim().toUpperCase())}
+                  >
+                    {applyPromotion.isPending ? t.applying : t.apply}
+                  </Button>
+                </div>
+                {promotionError ? (
+                  <p className="mt-2 text-xs font-medium text-arcilla">{promotionError}</p>
+                ) : null}
+                {appliedCode ? (
+                  <button
+                    type="button"
+                    className="mt-3 text-xs text-muted-foreground underline underline-offset-4"
+                    onClick={() => {
+                      setAppliedCode("");
+                      setPromoInput("");
+                      setPromotionError("");
+                      setShowPromoCode(false);
+                    }}
+                  >
+                    {t.removeCode}
+                  </button>
+                ) : null}
+              </CollapsibleContent>
+            </Collapsible>
             <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
               {(priceQuote?.total ?? subtotal) === 0 ? (
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-musgo" />
@@ -647,8 +791,10 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
               )}
               {(priceQuote?.total ?? subtotal) === 0 ? t.complimentaryNote : t.pendingNote}
             </p>
-            <div className="mt-8 flex gap-2">
+            <div className="mt-8 space-y-2">
               <Button
+                className="w-full rounded-xl"
+                size="lg"
                 onClick={() => {
                   trackTikTokEvent("ClickButton", {
                     ...tiktokSessionEventParams(selected, guests),
@@ -662,9 +808,9 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                   ? t.requesting
                   : (priceQuote?.total ?? subtotal) === 0
                     ? t.confirmFreeCta
-                    : t.requestCta}
+                    : `${t.requestCta} · ${money(priceQuote?.total ?? subtotal)}`}
               </Button>
-              <Button variant="ghost" onClick={() => setStep(2)}>
+              <Button className="w-full" variant="ghost" onClick={() => setStep(2)}>
                 {t.back}
               </Button>
             </div>
@@ -762,17 +908,33 @@ function LanguageSwitch({ current }: { current: Lang }) {
   );
 }
 
-function SessionSummary({ session, lang }: { session: PublicSession; lang: Lang }) {
+function SessionSummary({
+  session,
+  lang,
+  label,
+  changeLabel,
+  onChange,
+}: {
+  session: PublicSession;
+  lang: Lang;
+  label: string;
+  changeLabel: string;
+  onChange: () => void;
+}) {
   return (
-    <div className="card-soft mt-6 flex items-center justify-between gap-4 px-5 py-4">
-      <div>
-        <p className="text-sm">{relativeDayI18n(session.fecha, lang)}</p>
-        <p className="mt-0.5 text-base font-medium">{hourI18n(session.hora_inicio, lang)}</p>
+    <div className="card-soft mt-6 flex items-center gap-3 bg-card/85 px-4 py-4 md:px-5">
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-musgo/10 text-musgo">
+        <CalendarDays className="h-4 w-4" strokeWidth={1.5} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
+        <p className="mt-0.5 truncate text-sm font-medium">
+          {relativeDayI18n(session.fecha, lang)} · {hourI18n(session.hora_inicio, lang)}
+        </p>
       </div>
-      <AvailabilityBadge
-        available={session.available}
-        label={seatsLabelI18n(session.available, lang)}
-      />
+      <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={onChange}>
+        {changeLabel}
+      </Button>
     </div>
   );
 }
