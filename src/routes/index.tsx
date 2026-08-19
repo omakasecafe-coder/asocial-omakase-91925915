@@ -17,7 +17,8 @@ const publicDescriptionEn =
   "A guided coffee experience in Barranco: four moments, an intimate bar and a different way to discover specialty coffee.";
 const publicUrl = "https://asocialcafe.com/";
 const publicUrlEn = "https://asocialcafe.com/?lang=en";
-const socialImage = "https://asocialcafe.com/asocial-omakase-hero.webp";
+const publicSocialImage = "https://asocialcafe.com/asocial-landing-social-v2.jpg";
+const bookingSocialImage = "https://reservas.asocialcafe.com/asocial-omakase-hero.webp";
 
 function siteHead(publicSite: boolean, lang?: string) {
   const english = publicSite && lang === "en";
@@ -28,6 +29,7 @@ function siteHead(publicSite: boolean, lang?: string) {
       ? publicDescription
       : bookingDescription;
   const url = english ? publicUrlEn : publicSite ? publicUrl : bookingUrl;
+  const socialImage = publicSite ? publicSocialImage : bookingSocialImage;
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "FoodEstablishment",
@@ -61,14 +63,17 @@ function siteHead(publicSite: boolean, lang?: string) {
       { property: "og:locale", content: english ? "en_PE" : "es_PE" },
       { property: "og:locale:alternate", content: english ? "es_PE" : "en_PE" },
       { property: "og:image", content: socialImage },
-      { property: "og:image:width", content: "1536" },
-      { property: "og:image:height", content: "1024" },
+      { property: "og:image:secure_url", content: socialImage },
+      { property: "og:image:type", content: publicSite ? "image/jpeg" : "image/webp" },
+      { property: "og:image:width", content: publicSite ? "1200" : "1536" },
+      { property: "og:image:height", content: publicSite ? "630" : "1024" },
       {
         property: "og:image:alt",
         content: english
           ? "Coffee omakase experience at asocial café"
           : "Experiencia de café omakase en asocial café",
       },
+      { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: description },
       { name: "twitter:image", content: socialImage },
