@@ -11,6 +11,8 @@ import {
   Minus,
   Phone,
   Plus,
+  ShieldCheck,
+  TicketPercent,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -522,11 +524,13 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
               onBack={() => setStep(1)}
             />
           ) : (
-            <section>
-              <h1 className="text-2xl font-medium tracking-tight">{t.whoTitle}</h1>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
-                {t.whoSubtitle}
-              </p>
+            <section className="card-soft bg-card/85 p-5 md:p-8">
+              <div>
+                <h1 className="text-2xl font-medium tracking-tight">{t.whoTitle}</h1>
+                <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                  {t.whoSubtitle}
+                </p>
+              </div>
 
               <SessionSummary
                 session={selected}
@@ -536,7 +540,7 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                 onChange={() => setStep(1)}
               />
 
-              <section className="card-soft mt-5 bg-card/85 p-5 md:p-6">
+              <div className="mt-6 border-b border-border/70 pb-6">
                 <div className="flex items-center justify-between gap-5">
                   <div>
                     <Label className="text-sm font-medium text-foreground">{t.guestsLabel}</Label>
@@ -574,9 +578,9 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                     </Button>
                   </div>
                 </div>
-              </section>
+              </div>
 
-              <section className="card-soft mt-5 bg-card/85 p-5 md:p-6">
+              <div className="mt-6">
                 <h2 className="text-base font-medium">{t.contactTitle}</h2>
                 <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                   {t.contactHint}
@@ -664,134 +668,160 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                     </Field>
                   </CollapsibleContent>
                 </Collapsible>
-              </section>
+              </div>
 
-              <div className="mt-6 space-y-2">
+              <div className="mt-7 space-y-2">
                 <Button className="w-full rounded-xl" size="lg" onClick={continueToReview}>
                   {t.continue}
                 </Button>
                 <Button className="w-full" variant="ghost" onClick={() => setStep(1)}>
-                  {t.back}
+                  {t.backToSessions}
                 </Button>
+                <p className="flex items-center justify-center gap-2 pt-1 text-center text-xs text-muted-foreground">
+                  <ShieldCheck className="h-4 w-4" strokeWidth={1.5} />
+                  {t.noPaymentYet}
+                </p>
               </div>
             </section>
           )
         ) : null}
 
         {step === 3 && selected ? (
-          <section>
-            <h2 className="text-xl font-medium">{t.reviewTitle}</h2>
-            <div className="card-soft mt-6 divide-y divide-border">
-              <Row label={t.date} value={longDayI18n(selected.fecha, lang)} />
-              <Row label={t.time} value={hourI18n(selected.hora_inicio, lang)} />
-              <Row label={t.people} value={String(guests)} />
-              <Row label={t.pricePerPerson} value={money(selected.precio_por_persona)} />
-              <Row label={t.subtotal} value={money(priceQuote?.subtotal ?? subtotal)} />
-              {priceQuote?.promotionName ? (
-                <div className="bg-musgo/10 px-5 py-3.5">
-                  <div className="flex items-start gap-2">
-                    <BadgePercent
-                      className="mt-0.5 h-4 w-4 shrink-0 text-musgo"
-                      strokeWidth={1.5}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium">{priceQuote.promotionName}</p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        {priceQuote.promotionApplicationType === "automatic"
-                          ? t.automaticPromotion
-                          : `${t.codeApplied}${priceQuote.promotionCode ? `: ${priceQuote.promotionCode}` : ""}`}
-                      </p>
-                    </div>
-                    <span className="text-sm font-semibold text-musgo">
-                      −{money(priceQuote.discount)}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-              <Row
-                label={t.paymentStatus}
-                value={(priceQuote?.total ?? subtotal) === 0 ? t.complimentary : t.paymentPending}
-                strong
-              />
-              <div className="rounded-lg bg-musgo/15 px-5 py-3.5">
-                <Row label={t.total} value={money(priceQuote?.total ?? subtotal)} strong />
+          <section className="card-soft bg-card/85 p-5 md:p-8">
+            <div>
+              <h1 className="text-2xl font-medium tracking-tight">{t.reviewTitle}</h1>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                {t.reviewSubtitle}
+              </p>
+            </div>
+
+            <div className="mt-6 divide-y divide-border/70 border-y border-border/70">
+              <div className="flex items-start justify-between gap-4 py-3.5">
+                <span className="text-sm text-muted-foreground">{t.sessionSummary}</span>
+                <strong className="text-right text-sm font-medium">
+                  {relativeDayI18n(selected.fecha, lang)} · {hourI18n(selected.hora_inicio, lang)}
+                </strong>
+              </div>
+              <div className="flex items-center justify-between gap-4 py-3.5">
+                <span className="text-sm text-muted-foreground">{t.people}</span>
+                <strong className="text-sm font-medium tabular-nums">{guests}</strong>
               </div>
             </div>
 
-            <Collapsible
-              className="mt-4 rounded-xl border border-border bg-card/70"
-              open={showPromoCode || Boolean(appliedCode)}
-              onOpenChange={setShowPromoCode}
-            >
-              <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="flex w-full items-center justify-between gap-3 p-4 text-left"
-                >
-                  <span className="flex items-center gap-2 text-sm font-medium">
-                    <BadgePercent className="h-4 w-4 text-musgo" strokeWidth={1.5} />
-                    {t.promoCode}
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 text-muted-foreground transition-transform",
-                      (showPromoCode || appliedCode) && "rotate-180",
-                    )}
-                  />
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="border-t border-border px-4 pb-4 pt-3">
-                <p className="text-xs leading-relaxed text-muted-foreground">{t.promoCodeHint}</p>
-                <div className="mt-3 flex gap-2">
-                  <Input
-                    id="promo-code"
-                    value={promoInput}
-                    onChange={(event) => {
-                      setPromoInput(event.target.value.toUpperCase());
-                      setPromotionError("");
-                    }}
-                    placeholder={t.promoPlaceholder}
-                    disabled={applyPromotion.isPending || Boolean(appliedCode)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    disabled={
-                      !promoInput.trim() || applyPromotion.isPending || Boolean(appliedCode)
-                    }
-                    onClick={() => applyPromotion.mutate(promoInput.trim().toUpperCase())}
-                  >
-                    {applyPromotion.isPending ? t.applying : t.apply}
-                  </Button>
+            <div className="mt-5 divide-y divide-border/70" aria-live="polite">
+              <div className="flex items-center justify-between gap-4 py-3.5">
+                <span className="text-sm text-muted-foreground">{t.subtotal}</span>
+                <strong className="text-sm font-medium tabular-nums">
+                  {money(priceQuote?.subtotal ?? subtotal)}
+                </strong>
+              </div>
+
+              {priceQuote?.promotionName ? (
+                <div className="flex items-start justify-between gap-4 py-4">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-musgo/10 text-musgo">
+                      <BadgePercent className="h-4 w-4" strokeWidth={1.5} />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <strong className="text-sm font-medium">{priceQuote.promotionName}</strong>
+                        <span className="rounded-full border border-musgo/25 bg-musgo/5 px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em] text-musgo">
+                          {priceQuote.promotionApplicationType === "automatic"
+                            ? t.automaticBadge
+                            : (priceQuote.promotionCode ?? appliedCode)}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {priceQuote.promotionApplicationType === "automatic"
+                          ? t.automaticDiscountDetail
+                          : t.codeApplied}
+                      </p>
+                    </div>
+                  </div>
+                  <strong className="shrink-0 text-sm font-semibold tabular-nums text-musgo">
+                    −{money(priceQuote.discount)}
+                  </strong>
                 </div>
-                {promotionError ? (
-                  <p className="mt-2 text-xs font-medium text-arcilla">{promotionError}</p>
-                ) : null}
-                {appliedCode ? (
+              ) : null}
+
+              <div className="flex items-center justify-between gap-4 py-4">
+                <strong className="text-base font-medium">{t.total}</strong>
+                <strong className="text-lg font-semibold tabular-nums">
+                  {money(priceQuote?.total ?? subtotal)}
+                </strong>
+              </div>
+            </div>
+
+            {!appliedCode ? (
+              <Collapsible className="mt-2" open={showPromoCode} onOpenChange={setShowPromoCode}>
+                <CollapsibleTrigger asChild>
                   <button
                     type="button"
-                    className="mt-3 text-xs text-muted-foreground underline underline-offset-4"
-                    onClick={() => {
-                      setAppliedCode("");
-                      setPromoInput("");
-                      setPromotionError("");
-                      setShowPromoCode(false);
-                    }}
+                    className="flex w-full items-center justify-between gap-3 py-3 text-left text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    {t.removeCode}
+                    <span className="flex items-center gap-2">
+                      <TicketPercent className="h-4 w-4" strokeWidth={1.5} />
+                      {t.promoCode}
+                    </span>
+                    <ChevronDown
+                      className={cn("h-4 w-4 transition-transform", showPromoCode && "rotate-180")}
+                    />
                   </button>
-                ) : null}
-              </CollapsibleContent>
-            </Collapsible>
-            <p className="mt-4 flex items-start gap-2 text-sm leading-relaxed text-muted-foreground">
-              {(priceQuote?.total ?? subtotal) === 0 ? (
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-musgo" />
-              ) : (
-                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              )}
-              {(priceQuote?.total ?? subtotal) === 0 ? t.complimentaryNote : t.pendingNote}
-            </p>
-            <div className="mt-8 space-y-2">
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pb-3 pt-1">
+                  <div className="flex flex-col gap-2 min-[360px]:flex-row">
+                    <Input
+                      id="promo-code"
+                      value={promoInput}
+                      onChange={(event) => {
+                        setPromoInput(event.target.value.toUpperCase());
+                        setPromotionError("");
+                      }}
+                      placeholder={t.promoPlaceholder}
+                      disabled={applyPromotion.isPending}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0"
+                      disabled={!promoInput.trim() || applyPromotion.isPending}
+                      onClick={() => applyPromotion.mutate(promoInput.trim().toUpperCase())}
+                    >
+                      {applyPromotion.isPending ? t.applying : t.apply}
+                    </Button>
+                  </div>
+                  <p
+                    className={cn(
+                      "mt-2 text-xs leading-relaxed",
+                      promotionError ? "font-medium text-arcilla" : "text-muted-foreground",
+                    )}
+                  >
+                    {promotionError || t.promoCodeHint}
+                  </p>
+                </CollapsibleContent>
+              </Collapsible>
+            ) : (
+              <div className="mt-2 flex items-center justify-between gap-3 py-3 text-sm">
+                <span>
+                  {t.codeApplied}: <strong>{appliedCode}</strong>
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAppliedCode("");
+                    setPromoInput("");
+                    setPromotionError("");
+                    setShowPromoCode(false);
+                  }}
+                >
+                  {t.removeCode}
+                </Button>
+              </div>
+            )}
+
+            <div className="mt-5 space-y-2">
               <Button
                 className="w-full rounded-xl"
                 size="lg"
@@ -810,6 +840,10 @@ export function BookingExperience({ lang: langProp }: { lang?: string | undefine
                     ? t.confirmFreeCta
                     : `${t.requestCta} · ${money(priceQuote?.total ?? subtotal)}`}
               </Button>
+              <p className="flex items-center justify-center gap-2 py-1 text-center text-xs text-muted-foreground">
+                <ShieldCheck className="h-4 w-4" strokeWidth={1.5} />
+                {(priceQuote?.total ?? subtotal) === 0 ? t.noPaymentRequired : t.noPaymentYet}
+              </p>
               <Button className="w-full" variant="ghost" onClick={() => setStep(2)}>
                 {t.back}
               </Button>
@@ -922,17 +956,24 @@ function SessionSummary({
   onChange: () => void;
 }) {
   return (
-    <div className="card-soft mt-6 flex items-center gap-3 bg-card/85 px-4 py-4 md:px-5">
+    <div className="mt-6 flex items-center gap-3 border-b border-border/70 pb-5">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-musgo/10 text-musgo">
         <CalendarDays className="h-4 w-4" strokeWidth={1.5} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">{label}</p>
-        <p className="mt-0.5 truncate text-sm font-medium">
-          {relativeDayI18n(session.fecha, lang)} · {hourI18n(session.hora_inicio, lang)}
+        <p className="mt-0.5 text-sm font-medium">{longDayI18n(session.fecha, lang)}</p>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {hourI18n(session.hora_inicio, lang)} · Café omakase
         </p>
       </div>
-      <Button type="button" variant="ghost" size="sm" className="shrink-0" onClick={onChange}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-auto shrink-0 px-2 py-2 text-xs"
+        onClick={onChange}
+      >
         {changeLabel}
       </Button>
     </div>
