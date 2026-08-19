@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgePercent, Plus } from "lucide-react";
+import { BadgePercent, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { AdminShell } from "@/components/asocial/AdminShell";
@@ -9,8 +9,18 @@ import { EmptyState } from "@/components/asocial/EmptyState";
 import { MetricCard } from "@/components/asocial/MetricCard";
 import { PromotionDialog } from "@/components/asocial/PromotionDialog";
 import { StatusPill } from "@/components/asocial/StatusPill";
-import { Button } from "@/components/ui/button";
-import { setPromotionActive } from "@/lib/admin.functions";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { deletePromotion, setPromotionActive } from "@/lib/admin.functions";
 import { money, todayISO } from "@/lib/format";
 import { workspaceQuery, type PromotionRow } from "@/lib/queries";
 
@@ -31,6 +41,7 @@ function PromotionsPage() {
   const { data: ws } = useQuery(workspaceQuery());
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<PromotionRow | null>(null);
+  const [deleting, setDeleting] = useState<PromotionRow | null>(null);
 
   const toggle = useMutation({
     mutationFn: ({ id, active }: { id: string; active: boolean }) =>
@@ -41,6 +52,17 @@ function PromotionsPage() {
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : "No pudimos actualizarla"),
+  });
+
+  const remove = useMutation({
+    mutationFn: (id: string) => deletePromotion({ data: { id } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspace"] });
+      toast("Promoción eliminada");
+      setDeleting(null);
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : "No pudimos eliminarla"),
   });
 
   const metrics = useMemo(() => {
@@ -149,6 +171,15 @@ function PromotionsPage() {
                     >
                       {promotion.active ? "Pausar" : "Activar"}
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleting(promotion)}
+                    >
+                      <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                      Eliminar
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -172,6 +203,32 @@ function PromotionsPage() {
           sessions={sessions}
         />
       ) : null}
+
+      <AlertDialog open={Boolean(deleting)} onOpenChange={(open) => !open && setDeleting(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta promoción?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleting
+                ? `Se eliminará “${deleting.name}” de forma permanente. Esta acción solo se permite si nunca fue utilizada.`
+                : "Esta acción no se puede deshacer."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={remove.isPending}>Volver</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              disabled={remove.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                if (deleting) remove.mutate(deleting.id);
+              }}
+            >
+              {remove.isPending ? "Eliminando…" : "Eliminar promoción"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminShell>
   );
 }
