@@ -130,6 +130,22 @@ async function getTemplate(supabase: DB, key: string): Promise<TemplateRow | nul
   return (data as TemplateRow | null) ?? null;
 }
 
+/** Stores the outcome of the last automatic email attempt for a reservation. */
+async function recordEmailAttempt(
+  supabase: DB,
+  reservationId: string,
+  result: { sent: boolean; reason?: string | undefined },
+) {
+  await supabase
+    .from("reservations")
+    .update({
+      last_email_result: result.sent ? "sent" : (result.reason ?? "send_failed"),
+      last_email_at: new Date().toISOString(),
+    })
+    .eq("id", reservationId);
+  return result;
+}
+
 /** Sends payment instructions once when a reservation is created. */
 export async function sendReservationPaymentInstructionsEmail(supabase: DB, reservationId: string) {
   const { data: row } = await supabase
@@ -144,7 +160,8 @@ export async function sendReservationPaymentInstructionsEmail(supabase: DB, rese
 
   const template = await getTemplate(supabase, "reservation_confirmed");
   const ctx = await buildEmailContext(supabase, reservationId);
-  if (!template || !ctx) return { sent: false, reason: "missing_data" };
+  if (!template) return recordEmailAttempt(supabase, reservationId, { sent: false, reason: "template_not_found" });
+  if (!ctx) return recordEmailAttempt(supabase, reservationId, { sent: false, reason: "missing_data" });
 
   const result = await sendTemplateEmail({
     template,
@@ -159,7 +176,7 @@ export async function sendReservationPaymentInstructionsEmail(supabase: DB, rese
       .update({ confirmation_email_sent_at: new Date().toISOString() })
       .eq("id", reservationId);
   }
-  return result;
+  return recordEmailAttempt(supabase, reservationId, result);
 }
 
 /** Sends immediate confirmation for reservations whose final total is zero. */
@@ -179,7 +196,8 @@ export async function sendComplimentaryReservationConfirmedEmail(
 
   const template = await getTemplate(supabase, "complimentary_confirmed");
   const ctx = await buildEmailContext(supabase, reservationId);
-  if (!template || !ctx) return { sent: false, reason: "missing_data" };
+  if (!template) return recordEmailAttempt(supabase, reservationId, { sent: false, reason: "template_not_found" });
+  if (!ctx) return recordEmailAttempt(supabase, reservationId, { sent: false, reason: "missing_data" });
 
   const result = await sendTemplateEmail({
     template,
@@ -194,8 +212,25 @@ export async function sendComplimentaryReservationConfirmedEmail(
       .update({ confirmation_email_sent_at: new Date().toISOString() })
       .eq("id", reservationId);
   }
-  return result;
+  return recordEmailAttempt(supabase, reservationId, result);
 }
+
+/** Re-sends the pending reservation email (courtesy or payment instructions). */
+export async function resendReservationConfirmationEmail(supabase: DB, reservationId: string) {
+  const { data: row } = await supabase
+    .from("reservations")
+    .select("confirmation_email_sent_at, payment_status, total")
+    .eq("id", reservationId)
+    .maybeSingle();
+  if (!row) return { sent: false, reason: "reservation_not_found" };
+  if (row.confirmation_email_sent_at) return { sent: false, reason: "already_sent" };
+
+  const complimentary = row.payment_status === "complimentary" || Number(row.total) === 0;
+  return complimentary
+    ? sendComplimentaryReservationConfirmedEmail(supabase, reservationId)
+    : sendReservationPaymentInstructionsEmail(supabase, reservationId);
+}
+
 
 /** Sends the final reservation confirmation once a payment has been validated. */
 export async function sendPaymentConfirmedEmail(supabase: DB, paymentId: string) {

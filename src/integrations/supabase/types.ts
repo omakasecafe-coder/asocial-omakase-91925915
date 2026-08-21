@@ -395,6 +395,8 @@ export type Database = {
           discount: number
           guest_count: number
           id: string
+          last_email_at: string | null
+          last_email_result: string | null
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promotion_code: string | null
@@ -423,6 +425,8 @@ export type Database = {
           discount?: number
           guest_count: number
           id?: string
+          last_email_at?: string | null
+          last_email_result?: string | null
           notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promotion_code?: string | null
@@ -451,6 +455,8 @@ export type Database = {
           discount?: number
           guest_count?: number
           id?: string
+          last_email_at?: string | null
+          last_email_result?: string | null
           notes?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
           promotion_code?: string | null
@@ -783,6 +789,8 @@ export type Database = {
           discount: number
           guest_count: number
           id: string
+          last_email_at: string | null
+          last_email_result: string | null
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promotion_code: string | null
@@ -834,6 +842,8 @@ export type Database = {
           discount: number
           guest_count: number
           id: string
+          last_email_at: string | null
+          last_email_result: string | null
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promotion_code: string | null
@@ -893,6 +903,8 @@ export type Database = {
           discount: number
           guest_count: number
           id: string
+          last_email_at: string | null
+          last_email_result: string | null
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promotion_code: string | null
@@ -1030,6 +1042,8 @@ export type Database = {
           discount: number
           guest_count: number
           id: string
+          last_email_at: string | null
+          last_email_result: string | null
           notes: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
           promotion_code: string | null
