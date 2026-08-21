@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, MessageCircle } from "lucide-react";
+import { Plus, Mail, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 
 import { AdminShell } from "@/components/asocial/AdminShell";
@@ -25,7 +25,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { workspaceQuery, settingsQuery } from "@/lib/queries";
+import { workspaceQuery, settingsQuery, myAccessQuery } from "@/lib/queries";
 import { paidAmount, customerName } from "@/lib/derive";
 import { hour, money, longDay, stamp } from "@/lib/format";
 import { renderWhatsappMessage, openWhatsApp } from "@/lib/whatsapp";
@@ -43,6 +43,7 @@ import {
 
 import { MoveReservationDialog } from "@/components/asocial/MoveReservationDialog";
 import { CancelReservationDialog } from "@/components/asocial/CancelReservationDialog";
+import { ReservationEmailDialog } from "@/components/asocial/ReservationEmailDialog";
 
 export const Route = createFileRoute("/_authenticated/reservas/")({
   component: ReservationsPage,
@@ -52,6 +53,7 @@ function ReservationsPage() {
   const queryClient = useQueryClient();
   const { data: ws } = useQuery(workspaceQuery());
   const { data: settings } = useQuery(settingsQuery());
+  const { data: access } = useQuery(myAccessQuery());
   const [q, setQ] = useState("");
   // Por defecto mostramos lo que necesita atención del equipo.
   const [status, setStatus] = useState<string>("activa");
@@ -60,6 +62,12 @@ function ReservationsPage() {
   const [moving, setMoving] = useState<string | null>(null);
   const [editing, setEditing] = useState<string | null>(null);
   const [cancelling, setCancelling] = useState<{ id: string; code: string } | null>(null);
+  const [emailFor, setEmailFor] = useState<{
+    id: string;
+    bookingCode: string;
+    email: string;
+    sentAt: string | null;
+  } | null>(null);
   const [newIds, setNewIds] = useState<string[]>([]);
 
   // Al abrir la pantalla, las reservas dejan de ser "nuevas".
@@ -234,6 +242,32 @@ function ReservationsPage() {
                                     WhatsApp
                                   </Button>
                                 ) : null}
+                                {access?.isAdmin ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={!customer?.email}
+                                    title={
+                                      customer?.email
+                                        ? undefined
+                                        : "Agrega un correo al cliente antes de enviar"
+                                    }
+                                    onClick={() =>
+                                      customer?.email &&
+                                      setEmailFor({
+                                        id: r.id,
+                                        bookingCode: r.booking_code,
+                                        email: customer.email,
+                                        sentAt: r.confirmation_email_sent_at,
+                                      })
+                                    }
+                                  >
+                                    <Mail className="h-4 w-4" strokeWidth={1.5} />
+                                    {r.confirmation_email_sent_at
+                                      ? "Reenviar confirmación"
+                                      : "Enviar confirmación"}
+                                  </Button>
+                                ) : null}
                                 {pending > 0 ? (
                                   <Button
                                     size="sm"
@@ -321,6 +355,10 @@ function ReservationsPage() {
           bookingCode={cancelling.code}
         />
       ) : null}
+      <ReservationEmailDialog
+        target={emailFor}
+        onOpenChange={(open) => !open && setEmailFor(null)}
+      />
     </AdminShell>
   );
 }
