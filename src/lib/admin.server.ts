@@ -4,7 +4,7 @@
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
-import { sendTemplateEmail, type TemplateRow } from "./email.server";
+import { sendTemplateEmail, type SendResult, type TemplateRow } from "./email.server";
 
 type DB = SupabaseClient<Database>;
 
@@ -277,6 +277,66 @@ export async function sendPaymentConfirmedEmail(supabase: DB, paymentId: string)
       .eq("id", paymentId);
   }
   return result;
+}
+
+/**
+ * Sends the appropriate customer-facing reservation email on demand.
+ * Unlike the automatic flows, this intentionally allows a repeat send. The
+ * minute bucket keeps accidental duplicate requests idempotent at the provider.
+ */
+export async function sendReservationConfirmationEmailManually(
+  supabase: DB,
+  reservationId: string,
+): Promise<SendResult & { template?: string }> {
+  const { data: reservation } = await supabase
+    .from("reservations")
+    .select("reservation_status, payment_status, total")
+    .eq("id", reservationId)
+    .maybeSingle();
+
+  if (!reservation) return { sent: false, reason: "missing_reservation" };
+  if (reservation.reservation_status === "cancelled") {
+    return { sent: false, reason: "cancelled_reservation" };
+  }
+
+  const complimentary =
+    reservation.payment_status === "complimentary" || Number(reservation.total) === 0;
+  const paid = reservation.payment_status === "paid";
+  const templateKey = complimentary
+    ? "complimentary_confirmed"
+    : paid
+      ? "payment_confirmed"
+      : "reservation_confirmed";
+  const template = await getTemplate(supabase, templateKey);
+  const ctx = await buildEmailContext(supabase, reservationId);
+
+  if (!template) return { sent: false, reason: "missing_template", template: templateKey };
+  if (!ctx) return { sent: false, reason: "missing_email_context", template: templateKey };
+
+  const vars = paid
+    ? {
+        ...ctx.vars,
+        payment_amount: ctx.vars["reservation_total"] ?? "",
+        payment_status: "Pagado",
+      }
+    : ctx.vars;
+  const minuteBucket = Math.floor(Date.now() / 60_000);
+  const result = await sendTemplateEmail({
+    template,
+    to: ctx.email,
+    vars,
+    idempotencyKey: `manual-reservation-confirmation-${reservationId}-${minuteBucket}`,
+    label: `manual_${templateKey}`,
+  });
+
+  if (result.sent) {
+    await supabase
+      .from("reservations")
+      .update({ confirmation_email_sent_at: new Date().toISOString() })
+      .eq("id", reservationId);
+  }
+
+  return { ...result, template: templateKey };
 }
 
 /** Recomputes a payment's transaction status after refunds. */
