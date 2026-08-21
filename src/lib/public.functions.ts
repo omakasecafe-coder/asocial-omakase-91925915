@@ -151,6 +151,13 @@ export const createPublicReservation = createServerFn({ method: "POST" })
       : reservation.payment_status === "complimentary"
         ? await sendComplimentaryReservationConfirmedEmail(supabaseAdmin, reservation.id)
         : await sendReservationPaymentInstructionsEmail(supabaseAdmin, reservation.id);
+    if (!email.sent) {
+      console.warn("[email] reservation confirmation not sent", {
+        bookingCode: row.booking_code,
+        paymentStatus: row.payment_status,
+        reason: email.reason ?? "unknown",
+      });
+    }
     if (reservation) {
       try {
         await sendInternalNewReservationEmail(supabaseAdmin, reservation.id);
