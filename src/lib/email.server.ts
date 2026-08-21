@@ -21,7 +21,10 @@ export type TemplateRow = {
 };
 
 export function applyVars(text: string, vars: EmailVars) {
-  return (text ?? "").replace(/{{\s*([a-z_]+)\s*}}/gi, (_m, key: string) => vars[key.toLowerCase()] ?? "");
+  return (text ?? "").replace(
+    /{{\s*([a-z_]+)\s*}}/gi,
+    (_m, key: string) => vars[key.toLowerCase()] ?? "",
+  );
 }
 
 function escapeHtml(value: string) {
@@ -57,7 +60,9 @@ export function renderTemplate(template: TemplateRow, vars: EmailVars) {
   const businessName = vars["business_name"] || "asocial · café omakase";
   const year = new Date().getFullYear();
 
-  const text = [title, body, extra, signature, `${businessName} — ${SITE_URL}`].filter(Boolean).join("\n\n");
+  const text = [title, body, extra, signature, `${businessName} — ${SITE_URL}`]
+    .filter(Boolean)
+    .join("\n\n");
 
   const html = `<!doctype html>
 <html lang="es" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -124,18 +129,22 @@ export function renderTemplate(template: TemplateRow, vars: EmailVars) {
   </table>
 </body></html>`;
 
-
   return { subject, html, text };
 }
 
+const DEFAULT_EMAIL_SENDER_DOMAIN = "notify.asocialcafe.com";
 
 function senderDomain() {
-  return (
+  const configuredDomain =
     process.env["LOVABLE_EMAIL_SENDER_DOMAIN"] ??
     process.env["EMAIL_SENDER_DOMAIN"] ??
-    process.env["SENDER_DOMAIN"] ??
-    ""
-  );
+    process.env["SENDER_DOMAIN"];
+
+  // The verified asocial sender domain is stable and is also used by the
+  // authentication-email webhook. Keep environment overrides for future
+  // migrations, but do not silently skip transactional email when the
+  // optional override is absent.
+  return configuredDomain?.trim() || DEFAULT_EMAIL_SENDER_DOMAIN;
 }
 
 export type SendResult = { sent: boolean; reason?: string };
@@ -147,12 +156,17 @@ export async function sendTemplateEmail(args: {
   idempotencyKey: string;
   label: string;
 }): Promise<SendResult> {
-  if (!args.template.enabled) return { sent: false, reason: "template_disabled" };
-  if (!args.to || !args.to.includes("@")) return { sent: false, reason: "no_recipient" };
+  const skipped = (reason: string): SendResult => {
+    console.warn("[email] send skipped", { label: args.label, reason });
+    return { sent: false, reason };
+  };
+
+  if (!args.template.enabled) return skipped("template_disabled");
+  if (!args.to || !args.to.includes("@")) return skipped("no_recipient");
 
   const apiKey = process.env["LOVABLE_API_KEY"];
   const domain = senderDomain();
-  if (!apiKey || !domain) return { sent: false, reason: "email_domain_not_configured" };
+  if (!apiKey) return skipped("lovable_api_key_not_configured");
 
   const { subject, html, text } = renderTemplate(args.template, args.vars);
 
@@ -173,7 +187,8 @@ export async function sendTemplateEmail(args: {
     );
     return { sent: true };
   } catch (error) {
-    console.error("[email] send failed", error);
-    return { sent: false, reason: error instanceof Error ? error.message : "send_failed" };
+    const reason = error instanceof Error ? error.message : "send_failed";
+    console.error("[email] send failed", { label: args.label, reason });
+    return { sent: false, reason };
   }
 }
