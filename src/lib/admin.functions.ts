@@ -735,6 +735,47 @@ export const confirmReservation = createServerFn({ method: "POST" })
     return { ok: true, email: { sent: false, reason: "confirmation_requires_payment_validation" } };
   });
 
+export const resendReservationConfirmation = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ reservationId: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { requireAdmin, sendReservationConfirmationEmailManually, logAudit } =
+      await import("@/lib/admin.server");
+    await requireAdmin(context.supabase, context.userId);
+
+    const oneMinuteAgo = new Date(Date.now() - 60_000).toISOString();
+    const { data: recentAttempt, error: auditError } = await context.supabase
+      .from("audit_logs")
+      .select("created_at")
+      .eq("action", "resend_reservation_confirmation")
+      .eq("entity_type", "reservation")
+      .eq("entity_id", data.reservationId)
+      .gte("created_at", oneMinuteAgo)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (auditError) throw new Error(auditError.message);
+    if (recentAttempt) {
+      return { sent: false, reason: "rate_limited" };
+    }
+
+    const result = await sendReservationConfirmationEmailManually(
+      context.supabase,
+      data.reservationId,
+    );
+    await logAudit(context.supabase, context.userId, {
+      action: "resend_reservation_confirmation",
+      entityType: "reservation",
+      entityId: data.reservationId,
+      newValues: {
+        sent: result.sent,
+        reason: result.reason ?? null,
+        template: result.template ?? null,
+      },
+    });
+    return result;
+  });
+
 /* ----------------------------- payments admin ------------------------------ */
 
 export const updatePaymentStatus = createServerFn({ method: "POST" })
