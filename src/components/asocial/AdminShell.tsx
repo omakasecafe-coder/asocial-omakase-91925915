@@ -13,6 +13,7 @@ import {
   BookOpen,
   Menu,
   Mail,
+  MoreHorizontal,
   Package,
   Settings as SettingsIcon,
   Ticket,
@@ -48,14 +49,21 @@ type NavEntry =
 
 const nav: NavEntry[] = [
   { to: "/dashboard", key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/reportes", key: "reportes", label: "Reportes", icon: LineChart },
   { to: "/calendario", key: "calendario", label: "Calendario", icon: CalendarDays },
-  { to: "/sesiones", key: "sesiones", label: "Sesiones", icon: Coffee },
-  { to: "/reservas", key: "reservas", label: "Reservas", icon: Ticket },
-  { to: "/clientes", key: "clientes", label: "Clientes", icon: Users },
-  { to: "/pagos", key: "pagos", label: "Pagos", icon: CreditCard },
   {
-    key: "operacion",
-    label: "Operación",
+    key: "operaciones",
+    label: "Operaciones",
+    icon: Coffee,
+    children: [
+      { to: "/sesiones", key: "sesiones", label: "Sesiones", icon: Coffee },
+      { to: "/reservas", key: "reservas", label: "Reservas", icon: Ticket },
+      { to: "/clientes", key: "clientes", label: "Clientes", icon: Users },
+    ],
+  },
+  {
+    key: "produccion",
+    label: "Producción",
     icon: Package,
     children: [
       { to: "/inventario", key: "inventario", label: "Inventario", icon: Package },
@@ -63,11 +71,25 @@ const nav: NavEntry[] = [
       { to: "/costeo", key: "costeo", label: "Costeo", icon: Calculator },
     ],
   },
-  { to: "/promociones", key: "promociones", label: "Promociones", icon: BadgePercent },
-  { to: "/reportes", key: "reportes", label: "Reportes", icon: LineChart },
-  { to: "/usuarios", key: "usuarios", label: "Usuarios", icon: UserCog },
-  { to: "/configuracion", key: "configuracion", label: "Configuración", icon: SettingsIcon },
-  { to: "/probar-correo", key: "probar-correo", label: "Probar correo", icon: Mail },
+  {
+    key: "comercial",
+    label: "Comercial",
+    icon: CreditCard,
+    children: [
+      { to: "/pagos", key: "pagos", label: "Pagos", icon: CreditCard },
+      { to: "/promociones", key: "promociones", label: "Promociones", icon: BadgePercent },
+    ],
+  },
+  {
+    key: "mas",
+    label: "Más",
+    icon: MoreHorizontal,
+    children: [
+      { to: "/usuarios", key: "usuarios", label: "Usuarios", icon: UserCog },
+      { to: "/configuracion", key: "configuracion", label: "Configuración", icon: SettingsIcon },
+      { to: "/probar-correo", key: "probar-correo", label: "Probar correo", icon: Mail },
+    ],
+  },
 ];
 
 const navLinks = nav.flatMap((item) => ("children" in item ? item.children : [item]));
