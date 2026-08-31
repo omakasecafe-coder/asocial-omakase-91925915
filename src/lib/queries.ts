@@ -6,6 +6,7 @@ import {
   listStaffUsers,
   getMyAccess,
 } from "@/lib/admin.functions";
+import { getInventoryWorkspace } from "@/lib/inventory.functions";
 import { getPublicSessions } from "@/lib/public.functions";
 
 export const workspaceQuery = () =>
@@ -57,6 +58,11 @@ export const myAccessQuery = () =>
     staleTime: 60_000,
   });
 
+export const inventoryWorkspaceQuery = () =>
+  queryOptions({
+    queryKey: ["inventory-workspace"],
+    queryFn: () => getInventoryWorkspace(),
+  });
 
 export type Workspace = Awaited<ReturnType<typeof getWorkspace>>;
 export type SessionRow = Workspace["sessions"][number];
@@ -68,3 +74,4 @@ export type RefundRow = Workspace["refunds"][number];
 export type PromotionRow = Workspace["promotions"][number];
 export type PromotionRedemptionRow = Workspace["promotionRedemptions"][number];
 export type EmailTemplateRow = Awaited<ReturnType<typeof getEmailTemplates>>[number];
+export type InventoryWorkspaceData = Awaited<ReturnType<typeof getInventoryWorkspace>>;
