@@ -316,6 +316,42 @@ export const savePreparationRecipe = createServerFn({ method: "POST" })
     return { id: recipe.id as string };
   });
 
+export const deletePreparationRecipe = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const db = context.supabase as any;
+    const [nestedUses, drinkSteps, pairingSteps] = await Promise.all([
+      db.from("recipe_items").select("id", { count: "exact", head: true }).eq("nested_recipe_id", data.id),
+      db.from("omakase_menu_steps").select("id", { count: "exact", head: true }).eq("drink_recipe_id", data.id),
+      db.from("omakase_menu_steps").select("id", { count: "exact", head: true }).eq("pairing_recipe_id", data.id),
+    ]);
+    const dependencyError = nestedUses.error || drinkSteps.error || pairingSteps.error;
+    if (isMissingInventorySchema(dependencyError)) {
+      throw new Error("Primero aplica la migracion de inventario en Supabase.");
+    }
+    if (dependencyError) throw new Error(dependencyError.message);
+
+    const dependencyCount =
+      Number(nestedUses.count ?? 0) + Number(drinkSteps.count ?? 0) + Number(pairingSteps.count ?? 0);
+    if (dependencyCount > 0) {
+      throw new Error(
+        "No se puede eliminar esta receta porque ya esta vinculada a otra receta o a un menu.",
+      );
+    }
+
+    const { error } = await db.from("preparation_recipes").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await db.from("audit_logs").insert({
+      user_id: context.userId,
+      action: "delete_recipe",
+      entity_type: "preparation_recipe",
+      entity_id: data.id,
+    });
+    return { ok: true };
+  });
+
 const menuInput = z.object({
   name: z.string().trim().min(1).max(120),
   price_per_person: z.number().min(0).max(1000000),
