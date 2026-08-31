@@ -257,7 +257,7 @@ function InventoryPage() {
   );
 }
 
-function SetupRequiredCard({ message }: { message?: string }) {
+function SetupRequiredCard({ message }: { message?: string | undefined }) {
   return (
     <div className="card-soft max-w-2xl p-5">
       <h2 className="text-sm font-medium">Módulo pendiente de inicializar</h2>
