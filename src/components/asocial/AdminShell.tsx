@@ -3,18 +3,23 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   CalendarDays,
+  Calculator,
+  ChevronDown,
   Coffee,
   CreditCard,
   LayoutDashboard,
   LineChart,
   BadgePercent,
+  BookOpen,
   Menu,
   Mail,
+  Package,
   Settings as SettingsIcon,
   Ticket,
   Users,
   UserCog,
   LogOut,
+  type LucideIcon,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -25,54 +30,124 @@ import { myAccessQuery } from "@/lib/queries";
 import { canAccessModule } from "@/lib/modules";
 import logoLight from "@/assets/asocial-logo-light.png.asset.json";
 
-const nav = [
+type NavItem = {
+  to: string;
+  key: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+type NavEntry =
+  | NavItem
+  | {
+      key: string;
+      label: string;
+      icon: LucideIcon;
+      children: NavItem[];
+    };
+
+const nav: NavEntry[] = [
   { to: "/dashboard", key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/calendario", key: "calendario", label: "Calendario", icon: CalendarDays },
   { to: "/sesiones", key: "sesiones", label: "Sesiones", icon: Coffee },
   { to: "/reservas", key: "reservas", label: "Reservas", icon: Ticket },
   { to: "/clientes", key: "clientes", label: "Clientes", icon: Users },
   { to: "/pagos", key: "pagos", label: "Pagos", icon: CreditCard },
+  {
+    key: "operacion",
+    label: "Operación",
+    icon: Package,
+    children: [
+      { to: "/inventario", key: "inventario", label: "Inventario", icon: Package },
+      { to: "/recetas", key: "recetas", label: "Recetas", icon: BookOpen },
+      { to: "/costeo", key: "costeo", label: "Costeo", icon: Calculator },
+    ],
+  },
   { to: "/promociones", key: "promociones", label: "Promociones", icon: BadgePercent },
   { to: "/reportes", key: "reportes", label: "Reportes", icon: LineChart },
   { to: "/usuarios", key: "usuarios", label: "Usuarios", icon: UserCog },
   { to: "/configuracion", key: "configuracion", label: "Configuración", icon: SettingsIcon },
   { to: "/probar-correo", key: "probar-correo", label: "Probar correo", icon: Mail },
-] as const;
+];
+
+const navLinks = nav.flatMap((item) => ("children" in item ? item.children : [item]));
 
 function NavList({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const newReservations = useNewReservationsCount();
   const { data: access } = useQuery(myAccessQuery());
-  const visible = nav.filter((item) =>
-    canAccessModule(access?.modules, access?.isAdmin ?? false, item.key),
-  );
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const visible = nav
+    .map((item) => {
+      if (!("children" in item)) {
+        return canAccessModule(access?.modules, access?.isAdmin ?? false, item.key) ? item : null;
+      }
+      const children = item.children.filter((child) =>
+        canAccessModule(access?.modules, access?.isAdmin ?? false, child.key),
+      );
+      return children.length > 0 ? { ...item, children } : null;
+    })
+    .filter(Boolean) as NavEntry[];
+
+  function renderLink(item: NavItem, nested = false) {
+    const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+    return (
+      <Link
+        key={item.to}
+        to={item.to as never}
+        onClick={onNavigate}
+        className={cn(
+          "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-200",
+          nested ? "ml-5 pl-4" : "",
+          active
+            ? "bg-sidebar-accent text-sidebar-foreground"
+            : "text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+        )}
+      >
+        <item.icon className="h-4 w-4" strokeWidth={1.5} />
+        <span className="flex-1">{item.label}</span>
+        {item.to === "/reservas" && newReservations > 0 ? (
+          <span
+            aria-label={`${newReservations} reservas nuevas`}
+            className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-medium leading-none text-destructive-foreground"
+          >
+            {newReservations > 99 ? "99+" : newReservations}
+          </span>
+        ) : null}
+      </Link>
+    );
+  }
+
   return (
     <nav className="flex flex-col gap-0.5">
       {visible.map((item) => {
-        const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+        if (!("children" in item)) return renderLink(item);
+
+        const active = item.children.some(
+          (child) => pathname === child.to || pathname.startsWith(`${child.to}/`),
+        );
+        const open = openGroups[item.key] ?? active;
         return (
-          <Link
-            key={item.to}
-            to={item.to}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-200",
-              active
-                ? "bg-sidebar-accent text-sidebar-foreground"
-                : "text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-            )}
-          >
-            <item.icon className="h-4 w-4" strokeWidth={1.5} />
-            <span className="flex-1">{item.label}</span>
-            {item.to === "/reservas" && newReservations > 0 ? (
-              <span
-                aria-label={`${newReservations} reservas nuevas`}
-                className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[11px] font-medium leading-none text-destructive-foreground"
-              >
-                {newReservations > 99 ? "99+" : newReservations}
-              </span>
-            ) : null}
-          </Link>
+          <div key={item.key} className="space-y-0.5">
+            <button
+              type="button"
+              onClick={() => setOpenGroups((current) => ({ ...current, [item.key]: !open }))}
+              className={cn(
+                "flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors duration-200",
+                active
+                  ? "bg-sidebar-accent text-sidebar-foreground"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+              )}
+            >
+              <item.icon className="h-4 w-4" strokeWidth={1.5} />
+              <span className="flex-1 text-left">{item.label}</span>
+              <ChevronDown
+                className={cn("h-4 w-4 transition-transform duration-200", open ? "rotate-180" : "")}
+                strokeWidth={1.5}
+              />
+            </button>
+            {open ? <div className="space-y-0.5">{item.children.map((child) => renderLink(child, true))}</div> : null}
+          </div>
         );
       })}
     </nav>
@@ -102,7 +177,7 @@ export function AdminShell({
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (st) => st.location.pathname });
   const { data: access } = useQuery(myAccessQuery());
-  const current = nav.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
+  const current = navLinks.find((item) => pathname === item.to || pathname.startsWith(`${item.to}/`));
   const blocked = Boolean(
     access && current && !canAccessModule(access.modules, access.isAdmin, current.key),
   );
