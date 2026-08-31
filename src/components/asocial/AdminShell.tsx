@@ -50,12 +50,12 @@ type NavEntry =
 const nav: NavEntry[] = [
   { to: "/dashboard", key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/reportes", key: "reportes", label: "Reportes", icon: LineChart },
-  { to: "/calendario", key: "calendario", label: "Calendario", icon: CalendarDays },
   {
     key: "operaciones",
     label: "Operaciones",
     icon: Coffee,
     children: [
+      { to: "/calendario", key: "calendario", label: "Calendario", icon: CalendarDays },
       { to: "/sesiones", key: "sesiones", label: "Sesiones", icon: Coffee },
       { to: "/reservas", key: "reservas", label: "Reservas", icon: Ticket },
       { to: "/clientes", key: "clientes", label: "Clientes", icon: Users },
