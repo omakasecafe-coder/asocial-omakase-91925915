@@ -22,6 +22,14 @@ function RecipesPage() {
     );
   }
 
+  if (ws.setupRequired) {
+    return (
+      <AdminShell title="Recetas" description="Preparaciones base, bebidas y acompanamientos.">
+        <SetupRequiredCard message={ws.setupMessage} />
+      </AdminShell>
+    );
+  }
+
   const activeRecipes = ws.recipes.filter((recipe) => recipe.active);
   const drinks = activeRecipes.filter((recipe) => recipe.recipe_type === "drink");
   const bases = activeRecipes.filter((recipe) => recipe.recipe_type === "base");
@@ -119,5 +127,20 @@ function RecipesPage() {
         </aside>
       </div>
     </AdminShell>
+  );
+}
+
+function SetupRequiredCard({ message }: { message?: string }) {
+  return (
+    <div className="card-soft max-w-2xl p-5">
+      <h2 className="text-sm font-medium">Módulo pendiente de inicializar</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {message ??
+          "Falta aplicar la migración de inventario en Supabase para crear las tablas del módulo."}
+      </p>
+      <p className="mt-4 text-xs text-muted-foreground">
+        Migración: supabase/migrations/20260831120000_inventory_operations.sql
+      </p>
+    </div>
   );
 }
