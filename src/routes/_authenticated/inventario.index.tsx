@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { PackageCheck, PackageMinus } from "lucide-react";
+import { PackageCheck, PackageMinus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/asocial/AdminShell";
 import { MetricCard } from "@/components/asocial/MetricCard";
@@ -16,7 +16,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { recordInventoryWaste } from "@/lib/inventory.functions";
+import {
+  recordInventoryWaste,
+  saveInventoryItem,
+  saveInventoryLot,
+} from "@/lib/inventory.functions";
 import {
   asNumber,
   daysUntil,
@@ -43,10 +47,79 @@ function InventoryPage() {
     "vencimiento",
   );
   const [notes, setNotes] = useState("");
+  const [itemForm, setItemForm] = useState({
+    name: "",
+    category: "insumo",
+    base_unit: "g" as "g" | "ml" | "un",
+    presentation_quantity: "1000",
+    presentation_price: "",
+    notes: "",
+  });
+  const [lotForm, setLotForm] = useState({
+    item_id: "",
+    lot_code: "",
+    quantity: "",
+    total_cost: "",
+    purchased_at: "",
+    expires_at: "",
+    notes: "",
+  });
 
   const lots = useMemo(() => ws?.lots ?? [], [ws]);
   const selectedLot = lots.find((lot) => lot.id === lotId) ?? lots[0];
   const wasteMovements = (ws?.movements ?? []).filter((movement) => movement.movement_type === "waste");
+
+  const createItem = useMutation({
+    mutationFn: () =>
+      saveInventoryItem({
+        data: {
+          ...itemForm,
+          presentation_quantity: Number(itemForm.presentation_quantity),
+          presentation_price: Number(itemForm.presentation_price),
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-workspace"] });
+      setItemForm({
+        name: "",
+        category: "insumo",
+        base_unit: "g",
+        presentation_quantity: "1000",
+        presentation_price: "",
+        notes: "",
+      });
+      toast("Insumo creado");
+    },
+    onError: (error) => toast(error instanceof Error ? error.message : "No pudimos crear el insumo"),
+  });
+
+  const createLot = useMutation({
+    mutationFn: () =>
+      saveInventoryLot({
+        data: {
+          ...lotForm,
+          item_id: lotForm.item_id || ws?.items[0]?.id || "",
+          quantity: Number(lotForm.quantity),
+          total_cost: Number(lotForm.total_cost),
+          purchased_at: lotForm.purchased_at || null,
+          expires_at: lotForm.expires_at || null,
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-workspace"] });
+      setLotForm({
+        item_id: "",
+        lot_code: "",
+        quantity: "",
+        total_cost: "",
+        purchased_at: "",
+        expires_at: "",
+        notes: "",
+      });
+      toast("Lote registrado");
+    },
+    onError: (error) => toast(error instanceof Error ? error.message : "No pudimos registrar el lote"),
+  });
 
   const waste = useMutation({
     mutationFn: () => {
@@ -94,6 +167,22 @@ function InventoryPage() {
   const wasteValue = wasteMovements.reduce((sum, movement) => sum + movementCost(movement), 0);
   const canSubmit =
     Boolean(selectedLot) && Number(quantity) > 0 && Number(quantity) <= asNumber(selectedLot?.quantity_available);
+  const itemUnitCost =
+    Number(itemForm.presentation_quantity) > 0
+      ? Number(itemForm.presentation_price) / Number(itemForm.presentation_quantity)
+      : 0;
+  const canCreateItem =
+    itemForm.name.trim().length > 0 &&
+    itemForm.presentation_quantity !== "" &&
+    itemForm.presentation_price !== "" &&
+    Number(itemForm.presentation_quantity) > 0 &&
+    Number(itemForm.presentation_price) >= 0;
+  const canCreateLot =
+    Boolean(lotForm.item_id || ws.items.length > 0) &&
+    lotForm.quantity !== "" &&
+    lotForm.total_cost !== "" &&
+    Number(lotForm.quantity) > 0 &&
+    Number(lotForm.total_cost) >= 0;
 
   return (
     <AdminShell title="Inventario" description="Lotes, vencimientos y mermas de insumos.">
@@ -157,74 +246,247 @@ function InventoryPage() {
           </div>
         </section>
 
-        <aside className="card-soft p-5">
-          <div className="flex items-center gap-2">
-            <PackageMinus className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            <h2 className="text-sm font-medium">Registrar merma</h2>
+        <aside className="space-y-6">
+          <div className="card-soft p-5">
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+              <h2 className="text-sm font-medium">Nuevo insumo</h2>
+            </div>
+            <div className="mt-5 space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Nombre</Label>
+                <Input
+                  className="mt-2"
+                  value={itemForm.name}
+                  onChange={(event) => setItemForm({ ...itemForm, name: event.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Categoría</Label>
+                  <Input
+                    className="mt-2"
+                    value={itemForm.category}
+                    onChange={(event) => setItemForm({ ...itemForm, category: event.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Unidad</Label>
+                  <Select
+                    value={itemForm.base_unit}
+                    onValueChange={(value) =>
+                      setItemForm({ ...itemForm, base_unit: value as typeof itemForm.base_unit })
+                    }
+                  >
+                    <SelectTrigger className="mt-2">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="g">Gramos</SelectItem>
+                      <SelectItem value="ml">Mililitros</SelectItem>
+                      <SelectItem value="un">Unidades</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Presentación</Label>
+                  <Input
+                    className="mt-2"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={itemForm.presentation_quantity}
+                    onChange={(event) =>
+                      setItemForm({ ...itemForm, presentation_quantity: event.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Precio</Label>
+                  <Input
+                    className="mt-2"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={itemForm.presentation_price}
+                    onChange={(event) =>
+                      setItemForm({ ...itemForm, presentation_price: event.target.value })
+                    }
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Costo unitario: {money(itemUnitCost)} por {itemForm.base_unit}
+              </p>
+              <Button
+                className="w-full gap-2"
+                disabled={!canCreateItem || createItem.isPending}
+                onClick={() => createItem.mutate()}
+              >
+                <Plus className="h-4 w-4" strokeWidth={1.5} />
+                {createItem.isPending ? "Creando…" : "Crear insumo"}
+              </Button>
+            </div>
           </div>
-          <div className="mt-5 space-y-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Lote</Label>
-              <Select value={selectedLot?.id ?? ""} onValueChange={setLotId}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue placeholder="Elige un lote" />
-                </SelectTrigger>
-                <SelectContent>
-                  {lots.map((lot) => {
-                    const item = itemById(ws, lot.item_id);
-                    return (
-                      <SelectItem key={lot.id} value={lot.id}>
-                        {item?.name} · {lot.lot_code || "sin lote"}
+
+          <div className="card-soft p-5">
+            <div className="flex items-center gap-2">
+              <PackageCheck className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+              <h2 className="text-sm font-medium">Nuevo lote</h2>
+            </div>
+            <div className="mt-5 space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Insumo</Label>
+                <Select
+                  value={lotForm.item_id || ws.items[0]?.id || ""}
+                  onValueChange={(value) => setLotForm({ ...lotForm, item_id: value })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Elige un insumo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ws.items.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
                       </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Código de lote</Label>
+                <Input
+                  className="mt-2"
+                  value={lotForm.lot_code}
+                  onChange={(event) => setLotForm({ ...lotForm, lot_code: event.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Cantidad</Label>
+                  <Input
+                    className="mt-2"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={lotForm.quantity}
+                    onChange={(event) => setLotForm({ ...lotForm, quantity: event.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Costo total</Label>
+                  <Input
+                    className="mt-2"
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={lotForm.total_cost}
+                    onChange={(event) => setLotForm({ ...lotForm, total_cost: event.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Compra</Label>
+                  <Input
+                    className="mt-2"
+                    type="date"
+                    value={lotForm.purchased_at}
+                    onChange={(event) => setLotForm({ ...lotForm, purchased_at: event.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Vence</Label>
+                  <Input
+                    className="mt-2"
+                    type="date"
+                    value={lotForm.expires_at}
+                    onChange={(event) => setLotForm({ ...lotForm, expires_at: event.target.value })}
+                  />
+                </div>
+              </div>
+              <Button
+                className="w-full gap-2"
+                disabled={!canCreateLot || createLot.isPending}
+                onClick={() => createLot.mutate()}
+              >
+                <PackageCheck className="h-4 w-4" strokeWidth={1.5} />
+                {createLot.isPending ? "Registrando…" : "Registrar lote"}
+              </Button>
             </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Cantidad</Label>
-              <Input
-                className="mt-2"
-                type="number"
-                min={0}
-                step="0.01"
-                value={quantity}
-                onChange={(event) => setQuantity(event.target.value)}
-              />
-              {selectedLot ? (
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Disponible: {asNumber(selectedLot.quantity_available).toLocaleString("es-PE")} {" "}
-                  {itemById(ws, selectedLot.item_id)?.base_unit}
-                </p>
-              ) : null}
+          </div>
+
+          <div className="card-soft p-5">
+            <div className="flex items-center gap-2">
+              <PackageMinus className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+              <h2 className="text-sm font-medium">Registrar merma</h2>
             </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Motivo</Label>
-              <Select value={reason} onValueChange={(value) => setReason(value as typeof reason)}>
-                <SelectTrigger className="mt-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="vencimiento">Vencimiento</SelectItem>
-                  <SelectItem value="calidad">Calidad</SelectItem>
-                  <SelectItem value="preparacion">Preparacion</SelectItem>
-                  <SelectItem value="conteo">Conteo</SelectItem>
-                  <SelectItem value="otro">Otro</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="mt-5 space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Lote</Label>
+                <Select value={selectedLot?.id ?? ""} onValueChange={setLotId}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue placeholder="Elige un lote" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {lots.map((lot) => {
+                      const item = itemById(ws, lot.item_id);
+                      return (
+                        <SelectItem key={lot.id} value={lot.id}>
+                          {item?.name} · {lot.lot_code || "sin lote"}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Cantidad</Label>
+                <Input
+                  className="mt-2"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={quantity}
+                  onChange={(event) => setQuantity(event.target.value)}
+                />
+                {selectedLot ? (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    Disponible: {asNumber(selectedLot.quantity_available).toLocaleString("es-PE")}{" "}
+                    {itemById(ws, selectedLot.item_id)?.base_unit}
+                  </p>
+                ) : null}
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Motivo</Label>
+                <Select value={reason} onValueChange={(value) => setReason(value as typeof reason)}>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="vencimiento">Vencimiento</SelectItem>
+                    <SelectItem value="calidad">Calidad</SelectItem>
+                    <SelectItem value="preparacion">Preparacion</SelectItem>
+                    <SelectItem value="conteo">Conteo</SelectItem>
+                    <SelectItem value="otro">Otro</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Notas</Label>
+                <Textarea
+                  className="mt-2 min-h-24"
+                  value={notes}
+                  onChange={(event) => setNotes(event.target.value)}
+                />
+              </div>
+              <Button className="w-full gap-2" disabled={!canSubmit || waste.isPending} onClick={() => waste.mutate()}>
+                <PackageCheck className="h-4 w-4" strokeWidth={1.5} />
+                {waste.isPending ? "Registrando…" : "Guardar merma"}
+              </Button>
             </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Notas</Label>
-              <Textarea
-                className="mt-2 min-h-24"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-              />
-            </div>
-            <Button className="w-full gap-2" disabled={!canSubmit || waste.isPending} onClick={() => waste.mutate()}>
-              <PackageCheck className="h-4 w-4" strokeWidth={1.5} />
-              {waste.isPending ? "Registrando…" : "Guardar merma"}
-            </Button>
           </div>
         </aside>
       </div>
@@ -257,7 +519,7 @@ function InventoryPage() {
   );
 }
 
-function SetupRequiredCard({ message }: { message?: string | undefined }) {
+function SetupRequiredCard({ message }: { message?: string }) {
   return (
     <div className="card-soft max-w-2xl p-5">
       <h2 className="text-sm font-medium">Módulo pendiente de inicializar</h2>
