@@ -77,6 +77,14 @@ function InventoryPage() {
     );
   }
 
+  if (ws.setupRequired) {
+    return (
+      <AdminShell title="Inventario" description="Lotes, vencimientos y mermas de insumos.">
+        <SetupRequiredCard message={ws.setupMessage} />
+      </AdminShell>
+    );
+  }
+
   const inventoryValue = lots.reduce((sum, lot) => sum + lotValue(lot), 0);
   const expiring = lots.filter((lot) => {
     const remainingDays = daysUntil(lot.expires_at);
@@ -246,5 +254,20 @@ function InventoryPage() {
         </div>
       </section>
     </AdminShell>
+  );
+}
+
+function SetupRequiredCard({ message }: { message?: string }) {
+  return (
+    <div className="card-soft max-w-2xl p-5">
+      <h2 className="text-sm font-medium">Módulo pendiente de inicializar</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {message ??
+          "Falta aplicar la migración de inventario en Supabase para crear las tablas del módulo."}
+      </p>
+      <p className="mt-4 text-xs text-muted-foreground">
+        Migración: supabase/migrations/20260831120000_inventory_operations.sql
+      </p>
+    </div>
   );
 }
