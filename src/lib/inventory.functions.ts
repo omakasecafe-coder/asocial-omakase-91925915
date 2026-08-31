@@ -3,6 +3,24 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { InventoryWorkspace } from "@/lib/inventory";
 
+const emptyInventoryWorkspace = (setupMessage?: string): InventoryWorkspace => ({
+  items: [],
+  lots: [],
+  movements: [],
+  recipes: [],
+  recipeItems: [],
+  menus: [],
+  menuSteps: [],
+  sessionCosts: [],
+  setupRequired: Boolean(setupMessage),
+  setupMessage,
+});
+
+function isMissingInventorySchema(error: { message?: string } | null | undefined) {
+  const message = error?.message?.toLowerCase() ?? "";
+  return message.includes("inventory_items") || message.includes("schema cache");
+}
+
 export const getInventoryWorkspace = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -28,6 +46,11 @@ export const getInventoryWorkspace = createServerFn({ method: "GET" })
       menus.error ||
       menuSteps.error ||
       sessionCosts.error;
+    if (isMissingInventorySchema(error)) {
+      return emptyInventoryWorkspace(
+        "Falta aplicar la migracion de inventario en Supabase para crear las tablas del modulo.",
+      );
+    }
     if (error) throw new Error(error.message);
 
     return {
@@ -59,6 +82,9 @@ export const recordInventoryWaste = createServerFn({ method: "POST" })
       .select("id, item_id, quantity_available, unit_cost, status, inventory_items(base_unit)")
       .eq("id", data.lotId)
       .single();
+    if (isMissingInventorySchema(lotError)) {
+      throw new Error("Primero aplica la migracion de inventario en Supabase.");
+    }
     if (lotError) throw new Error(lotError.message);
 
     const available = Number(lot.quantity_available ?? 0);
