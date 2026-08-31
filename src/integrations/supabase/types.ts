@@ -131,6 +131,186 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_items: {
+        Row: {
+          active: boolean
+          base_unit: string
+          category: string
+          created_at: string
+          default_unit_cost: number
+          id: string
+          name: string
+          notes: string
+          presentation_price: number
+          presentation_quantity: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          base_unit: string
+          category?: string
+          created_at?: string
+          default_unit_cost?: number
+          id?: string
+          name: string
+          notes?: string
+          presentation_price?: number
+          presentation_quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          base_unit?: string
+          category?: string
+          created_at?: string
+          default_unit_cost?: number
+          id?: string
+          name?: string
+          notes?: string
+          presentation_price?: number
+          presentation_quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      inventory_lots: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          item_id: string
+          lot_code: string
+          notes: string
+          purchased_at: string | null
+          quantity_available: number
+          quantity_initial: number
+          status: string
+          unit_cost: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          item_id: string
+          lot_code?: string
+          notes?: string
+          purchased_at?: string | null
+          quantity_available: number
+          quantity_initial: number
+          status?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          item_id?: string
+          lot_code?: string
+          notes?: string
+          purchased_at?: string | null
+          quantity_available?: number
+          quantity_initial?: number
+          status?: string
+          unit_cost?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_lots_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      omakase_menu_steps: {
+        Row: {
+          created_at: string
+          drink_recipe_id: string | null
+          id: string
+          menu_id: string
+          pairing_optional: boolean
+          pairing_recipe_id: string | null
+          step_name: string
+          step_order: number
+        }
+        Insert: {
+          created_at?: string
+          drink_recipe_id?: string | null
+          id?: string
+          menu_id: string
+          pairing_optional?: boolean
+          pairing_recipe_id?: string | null
+          step_name: string
+          step_order: number
+        }
+        Update: {
+          created_at?: string
+          drink_recipe_id?: string | null
+          id?: string
+          menu_id?: string
+          pairing_optional?: boolean
+          pairing_recipe_id?: string | null
+          step_name?: string
+          step_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "omakase_menu_steps_drink_recipe_id_fkey"
+            columns: ["drink_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "preparation_recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "omakase_menu_steps_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "omakase_menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "omakase_menu_steps_pairing_recipe_id_fkey"
+            columns: ["pairing_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "preparation_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      omakase_menus: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          notes: string
+          price_per_person: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string
+          price_per_person?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string
+          price_per_person?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
@@ -186,6 +366,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      preparation_recipes: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+          notes: string
+          portion_quantity: number
+          recipe_type: string
+          updated_at: string
+          yield_quantity: number
+          yield_unit: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string
+          portion_quantity?: number
+          recipe_type?: string
+          updated_at?: string
+          yield_quantity?: number
+          yield_unit?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string
+          portion_quantity?: number
+          recipe_type?: string
+          updated_at?: string
+          yield_quantity?: number
+          yield_unit?: string
+        }
+        Relationships: []
       }
       promotion_redemptions: {
         Row: {
@@ -313,6 +532,61 @@ export type Database = {
           usage_limit_per_customer?: number | null
         }
         Relationships: []
+      }
+      recipe_items: {
+        Row: {
+          created_at: string
+          id: string
+          inventory_item_id: string | null
+          nested_recipe_id: string | null
+          notes: string
+          quantity: number
+          recipe_id: string
+          unit: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          nested_recipe_id?: string | null
+          notes?: string
+          quantity: number
+          recipe_id: string
+          unit: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inventory_item_id?: string | null
+          nested_recipe_id?: string | null
+          notes?: string
+          quantity?: number
+          recipe_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_items_inventory_item_id_fkey"
+            columns: ["inventory_item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_items_nested_recipe_id_fkey"
+            columns: ["nested_recipe_id"]
+            isOneToOne: false
+            referencedRelation: "preparation_recipes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recipe_items_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "preparation_recipes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       refunds: {
         Row: {
@@ -542,6 +816,70 @@ export type Database = {
           },
         ]
       }
+      session_operating_costs: {
+        Row: {
+          barista_cost: number
+          created_at: string
+          estimated_guests: number
+          id: string
+          menu_id: string | null
+          notes: string
+          other_cost: number
+          served_menus: number
+          session_id: string
+          updated_at: string
+          venue_cost: number
+        }
+        Insert: {
+          barista_cost?: number
+          created_at?: string
+          estimated_guests?: number
+          id?: string
+          menu_id?: string | null
+          notes?: string
+          other_cost?: number
+          served_menus?: number
+          session_id: string
+          updated_at?: string
+          venue_cost?: number
+        }
+        Update: {
+          barista_cost?: number
+          created_at?: string
+          estimated_guests?: number
+          id?: string
+          menu_id?: string | null
+          notes?: string
+          other_cost?: number
+          served_menus?: number
+          session_id?: string
+          updated_at?: string
+          venue_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "session_operating_costs_menu_id_fkey"
+            columns: ["menu_id"]
+            isOneToOne: false
+            referencedRelation: "omakase_menus"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "session_operating_costs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "session_availability"
+            referencedColumns: ["session_id"]
+          },
+          {
+            foreignKeyName: "session_operating_costs_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sessions: {
         Row: {
           capacidad_maxima: number
@@ -673,6 +1011,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          item_id: string
+          lot_id: string | null
+          movement_type: string
+          notes: string
+          quantity: number
+          reason: string | null
+          unit: string
+          unit_cost_snapshot: number
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id: string
+          lot_id?: string | null
+          movement_type: string
+          notes?: string
+          quantity: number
+          reason?: string | null
+          unit: string
+          unit_cost_snapshot?: number
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          item_id?: string
+          lot_id?: string | null
+          movement_type?: string
+          notes?: string
+          quantity?: number
+          reason?: string | null
+          unit?: string
+          unit_cost_snapshot?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_lots"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
