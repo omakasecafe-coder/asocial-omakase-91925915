@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Calculator } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Calculator, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { AdminShell } from "@/components/asocial/AdminShell";
 import { MetricCard } from "@/components/asocial/MetricCard";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -13,7 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { asNumber, menuCost, recipeById, recipeCost } from "@/lib/inventory";
+import { saveOmakaseMenu } from "@/lib/inventory.functions";
 import { inventoryWorkspaceQuery } from "@/lib/queries";
 import { money, pct } from "@/lib/format";
 
@@ -22,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/costeo/")({
 });
 
 function CostingPage() {
+  const queryClient = useQueryClient();
   const { data: ws } = useQuery(inventoryWorkspaceQuery());
   const firstMenuId = ws?.menus[0]?.id ?? "";
   const [menuId, setMenuId] = useState("");
@@ -29,6 +34,14 @@ function CostingPage() {
   const [venueCost, setVenueCost] = useState(0);
   const [baristaCost, setBaristaCost] = useState(0);
   const [otherCost, setOtherCost] = useState(0);
+  const [menuForm, setMenuForm] = useState({
+    name: "",
+    price_per_person: "",
+    notes: "",
+  });
+  const [menuLines, setMenuLines] = useState<MenuLineForm[]>([
+    { step_order: "1", step_name: "", drink_recipe_id: "", pairing_recipe_id: "", pairing_optional: true },
+  ]);
 
   const selectedMenuId = menuId || firstMenuId;
   const selectedMenu = ws?.menus.find((menu) => menu.id === selectedMenuId);
@@ -36,6 +49,37 @@ function CostingPage() {
     () => (ws?.menuSteps ?? []).filter((step) => step.menu_id === selectedMenuId),
     [ws, selectedMenuId],
   );
+
+  const createMenu = useMutation({
+    mutationFn: () =>
+      saveOmakaseMenu({
+        data: {
+          ...menuForm,
+          price_per_person: Number(menuForm.price_per_person),
+          steps: menuLines
+            .filter((line) => line.drink_recipe_id || line.step_name.trim())
+            .map((line, index) => {
+              const drink = ws?.recipes.find((recipe) => recipe.id === line.drink_recipe_id);
+              return {
+                step_order: Number(line.step_order) || index + 1,
+                step_name: line.step_name.trim() || drink?.name || `Tiempo ${index + 1}`,
+                drink_recipe_id: line.drink_recipe_id || null,
+                pairing_recipe_id: line.pairing_recipe_id || null,
+                pairing_optional: line.pairing_optional,
+              };
+            }),
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-workspace"] });
+      setMenuForm({ name: "", price_per_person: "", notes: "" });
+      setMenuLines([
+        { step_order: "1", step_name: "", drink_recipe_id: "", pairing_recipe_id: "", pairing_optional: true },
+      ]);
+      toast("Menu creado");
+    },
+    onError: (error) => toast(error instanceof Error ? error.message : "No pudimos crear el menu"),
+  });
 
   if (!ws) {
     return (
@@ -60,6 +104,13 @@ function CostingPage() {
   const revenue = asNumber(selectedMenu?.price_per_person) * served;
   const margin = revenue > 0 ? (revenue - totalCost) / revenue : 0;
   const costPerGuest = served > 0 ? totalCost / served : 0;
+  const drinkOptions = ws.recipes.filter((recipe) => recipe.active && recipe.recipe_type === "drink");
+  const pairingOptions = ws.recipes.filter((recipe) => recipe.active && recipe.recipe_type === "pairing");
+  const canCreateMenu =
+    menuForm.name.trim().length > 0 &&
+    menuForm.price_per_person !== "" &&
+    Number(menuForm.price_per_person) >= 0 &&
+    menuLines.some((line) => line.drink_recipe_id || line.step_name.trim());
 
   return (
     <AdminShell title="Costeo" description="Costo por menu servido, gastos de sesion y margen.">
@@ -125,25 +176,182 @@ function CostingPage() {
           </div>
         </section>
 
-        <aside className="card-soft p-5">
-          <div className="flex items-center gap-2">
-            <Calculator className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            <h2 className="text-sm font-medium">Lectura de sesion</h2>
-          </div>
-          <dl className="mt-5 space-y-3 text-sm">
-            <CostLine label="Venta estimada" value={money(revenue)} />
-            <CostLine label="Bebidas y recetas" value={money(beverageCost)} />
-            <CostLine label="Local" value={money(venueCost)} />
-            <CostLine label="Barista" value={money(baristaCost)} />
-            <CostLine label="Otros" value={money(otherCost)} />
-            <div className="border-t border-border pt-3">
-              <CostLine label="Utilidad estimada" value={money(revenue - totalCost)} strong />
+        <aside className="space-y-6">
+          <div className="card-soft p-5">
+            <div className="flex items-center gap-2">
+              <Plus className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+              <h2 className="text-sm font-medium">Nuevo menu</h2>
             </div>
-          </dl>
+            <div className="mt-5 space-y-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Nombre</Label>
+                <Input
+                  className="mt-2"
+                  value={menuForm.name}
+                  onChange={(event) => setMenuForm({ ...menuForm, name: event.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Precio por persona</Label>
+                <Input
+                  className="mt-2"
+                  type="number"
+                  min={0}
+                  step="0.5"
+                  value={menuForm.price_per_person}
+                  onChange={(event) =>
+                    setMenuForm({ ...menuForm, price_per_person: event.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">Tiempos</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 gap-1 px-2"
+                    onClick={() =>
+                      setMenuLines([
+                        ...menuLines,
+                        {
+                          step_order: String(menuLines.length + 1),
+                          step_name: "",
+                          drink_recipe_id: "",
+                          pairing_recipe_id: "",
+                          pairing_optional: true,
+                        },
+                      ])
+                    }
+                  >
+                    <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    Tiempo
+                  </Button>
+                </div>
+                {menuLines.map((line, index) => (
+                  <div key={index} className="rounded-lg border border-border p-3">
+                    <div className="grid grid-cols-[72px_1fr] gap-3">
+                      <Input
+                        type="number"
+                        min={0}
+                        value={line.step_order}
+                        onChange={(event) =>
+                          updateMenuLine(index, { step_order: event.target.value }, menuLines, setMenuLines)
+                        }
+                      />
+                      <Input
+                        placeholder="Nombre del tiempo"
+                        value={line.step_name}
+                        onChange={(event) =>
+                          updateMenuLine(index, { step_name: event.target.value }, menuLines, setMenuLines)
+                        }
+                      />
+                    </div>
+                    <div className="mt-3 space-y-3">
+                      <Select
+                        value={line.drink_recipe_id || "none"}
+                        onValueChange={(value) =>
+                          updateMenuLine(
+                            index,
+                            { drink_recipe_id: value === "none" ? "" : value },
+                            menuLines,
+                            setMenuLines,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Bebida" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sin bebida</SelectItem>
+                          {drinkOptions.map((recipe) => (
+                            <SelectItem key={recipe.id} value={recipe.id}>
+                              {recipe.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select
+                        value={line.pairing_recipe_id || "none"}
+                        onValueChange={(value) =>
+                          updateMenuLine(
+                            index,
+                            { pairing_recipe_id: value === "none" ? "" : value },
+                            menuLines,
+                            setMenuLines,
+                          )
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Acompanamiento" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">Sin acompanamiento</SelectItem>
+                          {pairingOptions.map((recipe) => (
+                            <SelectItem key={recipe.id} value={recipe.id}>
+                              {recipe.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <Textarea
+                className="min-h-20"
+                placeholder="Notas"
+                value={menuForm.notes}
+                onChange={(event) => setMenuForm({ ...menuForm, notes: event.target.value })}
+              />
+              <Button
+                className="w-full gap-2"
+                disabled={!canCreateMenu || createMenu.isPending}
+                onClick={() => createMenu.mutate()}
+              >
+                <Plus className="h-4 w-4" strokeWidth={1.5} />
+                {createMenu.isPending ? "Creando…" : "Crear menu"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="card-soft p-5">
+            <div className="flex items-center gap-2">
+              <Calculator className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+              <h2 className="text-sm font-medium">Lectura de sesion</h2>
+            </div>
+            <dl className="mt-5 space-y-3 text-sm">
+              <CostLine label="Venta estimada" value={money(revenue)} />
+              <CostLine label="Bebidas y recetas" value={money(beverageCost)} />
+              <CostLine label="Local" value={money(venueCost)} />
+              <CostLine label="Barista" value={money(baristaCost)} />
+              <CostLine label="Otros" value={money(otherCost)} />
+              <div className="border-t border-border pt-3">
+                <CostLine label="Utilidad estimada" value={money(revenue - totalCost)} strong />
+              </div>
+            </dl>
+          </div>
         </aside>
       </div>
     </AdminShell>
   );
+}
+
+type MenuLineForm = {
+  step_order: string;
+  step_name: string;
+  drink_recipe_id: string;
+  pairing_recipe_id: string;
+  pairing_optional: boolean;
+};
+
+function updateMenuLine(
+  index: number,
+  patch: Partial<MenuLineForm>,
+  lines: MenuLineForm[],
+  setLines: (lines: MenuLineForm[]) => void,
+) {
+  setLines(lines.map((line, current) => (current === index ? { ...line, ...patch } : line)));
 }
 
 function NumberField({
