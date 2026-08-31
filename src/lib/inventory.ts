@@ -97,6 +97,8 @@ export type InventoryWorkspace = {
   menus: OmakaseMenu[];
   menuSteps: OmakaseMenuStep[];
   sessionCosts: SessionOperatingCost[];
+  setupRequired?: boolean;
+  setupMessage?: string;
 };
 
 export function asNumber(value: number | string | null | undefined) {
