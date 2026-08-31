@@ -78,6 +78,7 @@ const inventoryItemInput = z.object({
   base_unit: z.enum(["g", "ml", "un"]),
   presentation_quantity: z.number().positive().max(1000000),
   presentation_price: z.number().min(0).max(1000000),
+  active: z.boolean().optional().default(true),
   notes: z.string().trim().max(400).optional().default(""),
 });
 
@@ -101,6 +102,99 @@ export const saveInventoryItem = createServerFn({ method: "POST" })
     }
     if (error) throw new Error(error.message);
     return { id: item.id as string };
+  });
+
+const updateInventoryItemInput = inventoryItemInput.extend({
+  id: z.string().uuid(),
+});
+
+export const updateInventoryItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => updateInventoryItemInput.parse(data))
+  .handler(async ({ data, context }) => {
+    const db = context.supabase as any;
+    const unitCost =
+      data.presentation_quantity > 0 ? data.presentation_price / data.presentation_quantity : 0;
+    const { id, ...payload } = data;
+    const { error } = await db
+      .from("inventory_items")
+      .update({
+        ...payload,
+        default_unit_cost: unitCost,
+      })
+      .eq("id", id);
+    if (isMissingInventorySchema(error)) {
+      throw new Error("Primero aplica la migracion de inventario en Supabase.");
+    }
+    if (error) throw new Error(error.message);
+
+    await db.from("audit_logs").insert({
+      user_id: context.userId,
+      action: "update_inventory_item",
+      entity_type: "inventory_item",
+      entity_id: id,
+      new_values: payload,
+    });
+    return { ok: true };
+  });
+
+export const setInventoryItemActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) =>
+    z.object({ id: z.string().uuid(), active: z.boolean() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const db = context.supabase as any;
+    const { error } = await db.from("inventory_items").update({ active: data.active }).eq("id", data.id);
+    if (isMissingInventorySchema(error)) {
+      throw new Error("Primero aplica la migracion de inventario en Supabase.");
+    }
+    if (error) throw new Error(error.message);
+
+    await db.from("audit_logs").insert({
+      user_id: context.userId,
+      action: data.active ? "activate_inventory_item" : "deactivate_inventory_item",
+      entity_type: "inventory_item",
+      entity_id: data.id,
+      new_values: { active: data.active },
+    });
+    return { ok: true };
+  });
+
+export const deleteInventoryItem = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ id: z.string().uuid() }).parse(data))
+  .handler(async ({ data, context }) => {
+    const db = context.supabase as any;
+    const [lots, movements, recipeItems] = await Promise.all([
+      db.from("inventory_lots").select("id", { count: "exact", head: true }).eq("item_id", data.id),
+      db.from("stock_movements").select("id", { count: "exact", head: true }).eq("item_id", data.id),
+      db.from("recipe_items").select("id", { count: "exact", head: true }).eq("inventory_item_id", data.id),
+    ]);
+    const dependencyError = lots.error || movements.error || recipeItems.error;
+    if (isMissingInventorySchema(dependencyError)) {
+      throw new Error("Primero aplica la migracion de inventario en Supabase.");
+    }
+    if (dependencyError) throw new Error(dependencyError.message);
+
+    const dependencyCount =
+      Number(lots.count ?? 0) + Number(movements.count ?? 0) + Number(recipeItems.count ?? 0);
+    if (dependencyCount > 0) {
+      throw new Error(
+        "No se puede eliminar este insumo porque ya tiene lotes, movimientos o recetas asociadas. Puedes marcarlo como inactivo.",
+      );
+    }
+
+    const { error } = await db.from("inventory_items").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+
+    await db.from("audit_logs").insert({
+      user_id: context.userId,
+      action: "delete_inventory_item",
+      entity_type: "inventory_item",
+      entity_id: data.id,
+    });
+    return { ok: true };
   });
 
 const inventoryLotInput = z.object({
