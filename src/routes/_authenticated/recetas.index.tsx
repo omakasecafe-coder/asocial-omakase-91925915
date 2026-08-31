@@ -95,6 +95,7 @@ function RecipesPage() {
   }
 
   const activeRecipes = ws.recipes.filter((recipe) => recipe.active);
+  const activeItems = ws.items.filter((item) => item.active);
   const drinks = activeRecipes.filter((recipe) => recipe.recipe_type === "drink");
   const bases = activeRecipes.filter((recipe) => recipe.recipe_type === "base");
   const averageDrinkCost =
@@ -272,7 +273,7 @@ function RecipesPage() {
                       <SelectValue placeholder="Insumo o base" />
                     </SelectTrigger>
                     <SelectContent>
-                      {ws.items.map((item) => (
+                      {activeItems.map((item) => (
                         <SelectItem key={item.id} value={`item:${item.id}`}>
                           {item.name}
                         </SelectItem>
