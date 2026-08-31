@@ -1,11 +1,21 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Beaker, BookOpen, Plus } from "lucide-react";
+import { Beaker, BookOpen, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { AdminShell } from "@/components/asocial/AdminShell";
 import { MetricCard } from "@/components/asocial/MetricCard";
-import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -16,8 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { asNumber, itemById, recipeById, recipeCost } from "@/lib/inventory";
-import { savePreparationRecipe } from "@/lib/inventory.functions";
+import { asNumber, itemById, recipeById, recipeCost, type PreparationRecipe } from "@/lib/inventory";
+import { deletePreparationRecipe, savePreparationRecipe } from "@/lib/inventory.functions";
 import { inventoryWorkspaceQuery } from "@/lib/queries";
 import { money } from "@/lib/format";
 
@@ -39,6 +49,7 @@ function RecipesPage() {
   const [lines, setLines] = useState<RecipeLineForm[]>([
     { source: "", quantity: "", unit: "g", notes: "" },
   ]);
+  const [deletingRecipe, setDeletingRecipe] = useState<PreparationRecipe | null>(null);
 
   const createRecipe = useMutation({
     mutationFn: () =>
@@ -76,6 +87,17 @@ function RecipesPage() {
       toast("Receta creada");
     },
     onError: (error) => toast(error instanceof Error ? error.message : "No pudimos crear la receta"),
+  });
+
+  const removeRecipe = useMutation({
+    mutationFn: (id: string) => deletePreparationRecipe({ data: { id } }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-workspace"] });
+      setDeletingRecipe(null);
+      toast("Receta eliminada");
+    },
+    onError: (error) =>
+      toast(error instanceof Error ? error.message : "No pudimos eliminar la receta"),
   });
 
   if (!ws) {
@@ -123,6 +145,11 @@ function RecipesPage() {
         <section className="space-y-4">
           {ws.recipes.map((recipe) => {
             const lines = ws.recipeItems.filter((line) => line.recipe_id === recipe.id);
+            const linkedRecipeUses = ws.recipeItems.filter((line) => line.nested_recipe_id === recipe.id).length;
+            const linkedMenuUses = ws.menuSteps.filter(
+              (step) => step.drink_recipe_id === recipe.id || step.pairing_recipe_id === recipe.id,
+            ).length;
+            const canDeleteRecipe = linkedRecipeUses + linkedMenuUses === 0;
             return (
               <article key={recipe.id} className="card-soft p-5">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -140,7 +167,23 @@ function RecipesPage() {
                       {!recipe.active ? " · archivada" : ""}
                     </p>
                   </div>
-                  <p className="text-right text-sm font-medium">{money(recipeCost(ws, recipe.id))}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-right text-sm font-medium">{money(recipeCost(ws, recipe.id))}</p>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      disabled={!canDeleteRecipe}
+                      title={
+                        canDeleteRecipe
+                          ? "Eliminar receta"
+                          : "No se puede eliminar porque esta vinculada a otra receta o menu"
+                      }
+                      onClick={() => setDeletingRecipe(recipe)}
+                    >
+                      <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="mt-4 overflow-hidden rounded-lg border border-border">
@@ -330,6 +373,32 @@ function RecipesPage() {
           </div>
         </aside>
       </div>
+
+      <AlertDialog open={Boolean(deletingRecipe)} onOpenChange={(open) => !open && setDeletingRecipe(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar esta receta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deletingRecipe
+                ? `Se eliminará “${deletingRecipe.name}” y sus componentes. Solo se permite si no está vinculada a otra receta o menú.`
+                : "Confirma la eliminacion de la receta."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={removeRecipe.isPending}>Volver</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              disabled={removeRecipe.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                if (deletingRecipe) removeRecipe.mutate(deletingRecipe.id);
+              }}
+            >
+              {removeRecipe.isPending ? "Eliminando…" : "Eliminar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AdminShell>
   );
 }
