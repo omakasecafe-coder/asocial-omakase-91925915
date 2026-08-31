@@ -45,6 +45,14 @@ function CostingPage() {
     );
   }
 
+  if (ws.setupRequired) {
+    return (
+      <AdminShell title="Costeo" description="Costo por menu servido, gastos de sesion y margen.">
+        <SetupRequiredCard message={ws.setupMessage} />
+      </AdminShell>
+    );
+  }
+
   const unitMenuCost = menuCost(ws, selectedMenuId);
   const beverageCost = unitMenuCost * served;
   const fixedCosts = venueCost + baristaCost + otherCost;
@@ -167,6 +175,21 @@ function CostLine({ label, value, strong = false }: { label: string; value: stri
     <div className="flex items-center justify-between gap-4">
       <dt className="text-muted-foreground">{label}</dt>
       <dd className={strong ? "font-medium" : "tabular-nums"}>{value}</dd>
+    </div>
+  );
+}
+
+function SetupRequiredCard({ message }: { message?: string }) {
+  return (
+    <div className="card-soft max-w-2xl p-5">
+      <h2 className="text-sm font-medium">Módulo pendiente de inicializar</h2>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {message ??
+          "Falta aplicar la migración de inventario en Supabase para crear las tablas del módulo."}
+      </p>
+      <p className="mt-4 text-xs text-muted-foreground">
+        Migración: supabase/migrations/20260831120000_inventory_operations.sql
+      </p>
     </div>
   );
 }
