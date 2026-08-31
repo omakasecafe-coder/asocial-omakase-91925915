@@ -1,9 +1,23 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Beaker, BookOpen } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Beaker, BookOpen, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { AdminShell } from "@/components/asocial/AdminShell";
 import { MetricCard } from "@/components/asocial/MetricCard";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { asNumber, itemById, recipeById, recipeCost } from "@/lib/inventory";
+import { savePreparationRecipe } from "@/lib/inventory.functions";
 import { inventoryWorkspaceQuery } from "@/lib/queries";
 import { money } from "@/lib/format";
 
@@ -12,7 +26,57 @@ export const Route = createFileRoute("/_authenticated/recetas/")({
 });
 
 function RecipesPage() {
+  const queryClient = useQueryClient();
   const { data: ws } = useQuery(inventoryWorkspaceQuery());
+  const [form, setForm] = useState({
+    name: "",
+    recipe_type: "drink" as "base" | "drink" | "pairing",
+    yield_quantity: "1",
+    yield_unit: "un" as "g" | "ml" | "un",
+    portion_quantity: "1",
+    notes: "",
+  });
+  const [lines, setLines] = useState<RecipeLineForm[]>([
+    { source: "", quantity: "", unit: "g", notes: "" },
+  ]);
+
+  const createRecipe = useMutation({
+    mutationFn: () =>
+      savePreparationRecipe({
+        data: {
+          ...form,
+          yield_quantity: Number(form.yield_quantity),
+          portion_quantity: Number(form.portion_quantity),
+          lines: lines
+            .filter((line) => line.source && Number(line.quantity) > 0)
+            .map((line) => ({
+              inventory_item_id: line.source.startsWith("item:")
+                ? line.source.replace("item:", "")
+                : null,
+              nested_recipe_id: line.source.startsWith("recipe:")
+                ? line.source.replace("recipe:", "")
+                : null,
+              quantity: Number(line.quantity),
+              unit: line.unit,
+              notes: line.notes,
+            })),
+        },
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["inventory-workspace"] });
+      setForm({
+        name: "",
+        recipe_type: "drink",
+        yield_quantity: "1",
+        yield_unit: "un",
+        portion_quantity: "1",
+        notes: "",
+      });
+      setLines([{ source: "", quantity: "", unit: "g", notes: "" }]);
+      toast("Receta creada");
+    },
+    onError: (error) => toast(error instanceof Error ? error.message : "No pudimos crear la receta"),
+  });
 
   if (!ws) {
     return (
@@ -37,6 +101,13 @@ function RecipesPage() {
     drinks.length > 0
       ? drinks.reduce((sum, recipe) => sum + recipeCost(ws, recipe.id), 0) / drinks.length
       : 0;
+  const canCreateRecipe =
+    form.name.trim().length > 0 &&
+    form.yield_quantity !== "" &&
+    form.portion_quantity !== "" &&
+    Number(form.yield_quantity) > 0 &&
+    Number(form.portion_quantity) > 0 &&
+    lines.some((line) => line.source && Number(line.quantity) > 0);
 
   return (
     <AdminShell title="Recetas" description="Preparaciones base, bebidas y acompanamientos.">
@@ -106,23 +177,155 @@ function RecipesPage() {
 
         <aside className="card-soft p-5">
           <div className="flex items-center gap-2">
-            <Beaker className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
-            <h2 className="text-sm font-medium">Estructura recomendada</h2>
+            <Plus className="h-4 w-4 text-muted-foreground" strokeWidth={1.5} />
+            <h2 className="text-sm font-medium">Nueva receta</h2>
           </div>
-          <div className="mt-5 space-y-4 text-sm text-muted-foreground">
-            <p>
-              Cada bebida apunta a insumos directos o a preparaciones base. Asi puedes costear un
-              clarificado, un cold brew o una leche infusionada una sola vez y reutilizarlo en varios
-              tiempos.
-            </p>
-            <p>
-              Los acompanamientos pueden entrar como receta opcional dentro del tiempo. Si no se sirve,
-              el costeo de la sesion no lo suma.
-            </p>
-            <p>
-              Las cantidades quedan en unidad base: gramos, mililitros o unidades. El precio se toma del
-              costo por unidad del insumo.
-            </p>
+          <div className="mt-5 space-y-4">
+            <div>
+              <Label className="text-xs text-muted-foreground">Nombre</Label>
+              <Input
+                className="mt-2"
+                value={form.name}
+                onChange={(event) => setForm({ ...form, name: event.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Tipo</Label>
+                <Select
+                  value={form.recipe_type}
+                  onValueChange={(value) =>
+                    setForm({ ...form, recipe_type: value as typeof form.recipe_type })
+                  }
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="drink">Bebida</SelectItem>
+                    <SelectItem value="base">Base</SelectItem>
+                    <SelectItem value="pairing">Acompanamiento</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Unidad final</Label>
+                <Select
+                  value={form.yield_unit}
+                  onValueChange={(value) => setForm({ ...form, yield_unit: value as typeof form.yield_unit })}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="g">Gramos</SelectItem>
+                    <SelectItem value="ml">Mililitros</SelectItem>
+                    <SelectItem value="un">Unidades</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">Rinde</Label>
+                <Input
+                  className="mt-2"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.yield_quantity}
+                  onChange={(event) => setForm({ ...form, yield_quantity: event.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Porción costeo</Label>
+                <Input
+                  className="mt-2"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={form.portion_quantity}
+                  onChange={(event) => setForm({ ...form, portion_quantity: event.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">Componentes</Label>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 gap-1 px-2"
+                  onClick={() => setLines([...lines, { source: "", quantity: "", unit: "g", notes: "" }])}
+                >
+                  <Plus className="h-3.5 w-3.5" strokeWidth={1.5} />
+                  Línea
+                </Button>
+              </div>
+              {lines.map((line, index) => (
+                <div key={index} className="rounded-lg border border-border p-3">
+                  <Select
+                    value={line.source}
+                    onValueChange={(value) => updateLine(index, { source: value }, lines, setLines)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Insumo o base" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ws.items.map((item) => (
+                        <SelectItem key={item.id} value={`item:${item.id}`}>
+                          {item.name}
+                        </SelectItem>
+                      ))}
+                      {ws.recipes.map((recipe) => (
+                        <SelectItem key={recipe.id} value={`recipe:${recipe.id}`}>
+                          {recipe.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <Input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      placeholder="Cantidad"
+                      value={line.quantity}
+                      onChange={(event) =>
+                        updateLine(index, { quantity: event.target.value }, lines, setLines)
+                      }
+                    />
+                    <Select
+                      value={line.unit}
+                      onValueChange={(value) => updateLine(index, { unit: value as RecipeLineForm["unit"] }, lines, setLines)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="g">g</SelectItem>
+                        <SelectItem value="ml">ml</SelectItem>
+                        <SelectItem value="un">un</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Textarea
+              className="min-h-20"
+              placeholder="Notas"
+              value={form.notes}
+              onChange={(event) => setForm({ ...form, notes: event.target.value })}
+            />
+            <Button
+              className="w-full gap-2"
+              disabled={!canCreateRecipe || createRecipe.isPending}
+              onClick={() => createRecipe.mutate()}
+            >
+              <Beaker className="h-4 w-4" strokeWidth={1.5} />
+              {createRecipe.isPending ? "Creando…" : "Crear receta"}
+            </Button>
           </div>
         </aside>
       </div>
@@ -130,7 +333,23 @@ function RecipesPage() {
   );
 }
 
-function SetupRequiredCard({ message }: { message?: string | undefined }) {
+type RecipeLineForm = {
+  source: string;
+  quantity: string;
+  unit: "g" | "ml" | "un";
+  notes: string;
+};
+
+function updateLine(
+  index: number,
+  patch: Partial<RecipeLineForm>,
+  lines: RecipeLineForm[],
+  setLines: (lines: RecipeLineForm[]) => void,
+) {
+  setLines(lines.map((line, current) => (current === index ? { ...line, ...patch } : line)));
+}
+
+function SetupRequiredCard({ message }: { message?: string }) {
   return (
     <div className="card-soft max-w-2xl p-5">
       <h2 className="text-sm font-medium">Módulo pendiente de inicializar</h2>
