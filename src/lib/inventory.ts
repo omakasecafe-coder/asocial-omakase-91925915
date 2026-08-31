@@ -97,8 +97,8 @@ export type InventoryWorkspace = {
   menus: OmakaseMenu[];
   menuSteps: OmakaseMenuStep[];
   sessionCosts: SessionOperatingCost[];
-  setupRequired?: boolean;
-  setupMessage?: string;
+  setupRequired?: boolean | undefined;
+  setupMessage?: string | undefined;
 };
 
 export function asNumber(value: number | string | null | undefined) {
@@ -143,16 +143,20 @@ export function daysUntil(date: string | null | undefined) {
   return Math.ceil((target.getTime() - today.getTime()) / 86_400_000);
 }
 
-export function recipeCost(ws: InventoryWorkspace, recipeId: string | null | undefined, seen = new Set<string>()) {
+export function recipeCost(
+  ws: InventoryWorkspace,
+  recipeId: string | null | undefined,
+  seen = new Set<string>(),
+): number {
   if (!recipeId || seen.has(recipeId)) return 0;
   const recipe = recipeById(ws, recipeId);
   if (!recipe) return 0;
 
   const nextSeen = new Set(seen);
   nextSeen.add(recipeId);
-  const total = ws.recipeItems
+  const total: number = ws.recipeItems
     .filter((line) => line.recipe_id === recipeId)
-    .reduce((sum, line) => {
+    .reduce<number>((sum, line) => {
       if (line.inventory_item_id) {
         const item = itemById(ws, line.inventory_item_id);
         return sum + asNumber(line.quantity) * asNumber(item?.default_unit_cost);

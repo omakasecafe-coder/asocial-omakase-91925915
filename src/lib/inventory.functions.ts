@@ -54,14 +54,14 @@ export const getInventoryWorkspace = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
 
     return {
-      items: items.data ?? [],
-      lots: lots.data ?? [],
-      movements: movements.data ?? [],
-      recipes: recipes.data ?? [],
-      recipeItems: recipeItems.data ?? [],
-      menus: menus.data ?? [],
-      menuSteps: menuSteps.data ?? [],
-      sessionCosts: sessionCosts.data ?? [],
+      items: (items.data ?? []) as InventoryWorkspace["items"],
+      lots: (lots.data ?? []) as InventoryWorkspace["lots"],
+      movements: (movements.data ?? []) as InventoryWorkspace["movements"],
+      recipes: (recipes.data ?? []) as InventoryWorkspace["recipes"],
+      recipeItems: (recipeItems.data ?? []) as InventoryWorkspace["recipeItems"],
+      menus: (menus.data ?? []) as InventoryWorkspace["menus"],
+      menuSteps: (menuSteps.data ?? []) as InventoryWorkspace["menuSteps"],
+      sessionCosts: (sessionCosts.data ?? []) as InventoryWorkspace["sessionCosts"],
     } satisfies InventoryWorkspace;
   });
 
