@@ -18,16 +18,18 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedConfiguracionRouteImport } from './routes/_authenticated/configuracion'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCosteoIndexRouteImport } from './routes/_authenticated/costeo.index'
+import { Route as AuthenticatedInsumosIndexRouteImport } from './routes/_authenticated/insumos.index'
+import { Route as AuthenticatedInventarioIndexRouteImport } from './routes/_authenticated/inventario.index'
+import { Route as AuthenticatedMenusIndexRouteImport } from './routes/_authenticated/menus.index'
 import { Route as AuthenticatedPagosRouteImport } from './routes/_authenticated/pagos'
 import { Route as AuthenticatedProbarCorreoRouteImport } from './routes/_authenticated/probar-correo'
 import { Route as AuthenticatedPromocionesRouteImport } from './routes/_authenticated/promociones'
+import { Route as AuthenticatedRecetasIndexRouteImport } from './routes/_authenticated/recetas.index'
 import { Route as AuthenticatedReportesRouteImport } from './routes/_authenticated/reportes'
 import { Route as AuthenticatedUsuariosRouteImport } from './routes/_authenticated/usuarios'
 import { Route as AuthenticatedClientesIndexRouteImport } from './routes/_authenticated/clientes.index'
 import { Route as AuthenticatedClientesIdRouteImport } from './routes/_authenticated/clientes.$id'
-import { Route as AuthenticatedCosteoIndexRouteImport } from './routes/_authenticated/costeo.index'
-import { Route as AuthenticatedInventarioIndexRouteImport } from './routes/_authenticated/inventario.index'
-import { Route as AuthenticatedRecetasIndexRouteImport } from './routes/_authenticated/recetas.index'
 import { Route as AuthenticatedReservasIndexRouteImport } from './routes/_authenticated/reservas.index'
 import { Route as AuthenticatedSesionesIndexRouteImport } from './routes/_authenticated/sesiones.index'
 import { Route as AuthenticatedSesionesIdRouteImport } from './routes/_authenticated/sesiones.$id'
@@ -79,6 +81,30 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCosteoIndexRoute =
+  AuthenticatedCosteoIndexRouteImport.update({
+    id: '/costeo/',
+    path: '/costeo/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInsumosIndexRoute =
+  AuthenticatedInsumosIndexRouteImport.update({
+    id: '/insumos/',
+    path: '/insumos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInventarioIndexRoute =
+  AuthenticatedInventarioIndexRouteImport.update({
+    id: '/inventario/',
+    path: '/inventario/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMenusIndexRoute =
+  AuthenticatedMenusIndexRouteImport.update({
+    id: '/menus/',
+    path: '/menus/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPagosRoute = AuthenticatedPagosRouteImport.update({
   id: '/pagos',
   path: '/pagos',
@@ -94,6 +120,12 @@ const AuthenticatedPromocionesRoute =
   AuthenticatedPromocionesRouteImport.update({
     id: '/promociones',
     path: '/promociones',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecetasIndexRoute =
+  AuthenticatedRecetasIndexRouteImport.update({
+    id: '/recetas/',
+    path: '/recetas/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedReportesRoute = AuthenticatedReportesRouteImport.update({
@@ -117,24 +149,6 @@ const AuthenticatedClientesIdRoute = AuthenticatedClientesIdRouteImport.update({
   path: '/clientes/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCosteoIndexRoute =
-  AuthenticatedCosteoIndexRouteImport.update({
-    id: '/costeo/',
-    path: '/costeo/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedInventarioIndexRoute =
-  AuthenticatedInventarioIndexRouteImport.update({
-    id: '/inventario/',
-    path: '/inventario/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedRecetasIndexRoute =
-  AuthenticatedRecetasIndexRouteImport.update({
-    id: '/recetas/',
-    path: '/recetas/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedReservasIndexRoute =
   AuthenticatedReservasIndexRouteImport.update({
     id: '/reservas/',
@@ -171,18 +185,20 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
+  '/costeo/': typeof AuthenticatedCosteoIndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/insumos/': typeof AuthenticatedInsumosIndexRoute
+  '/inventario/': typeof AuthenticatedInventarioIndexRoute
+  '/menus/': typeof AuthenticatedMenusIndexRoute
   '/pagos': typeof AuthenticatedPagosRoute
   '/probar-correo': typeof AuthenticatedProbarCorreoRoute
   '/promociones': typeof AuthenticatedPromocionesRoute
+  '/recetas/': typeof AuthenticatedRecetasIndexRoute
   '/reportes': typeof AuthenticatedReportesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/sesiones/$id': typeof AuthenticatedSesionesIdRoute
   '/clientes/': typeof AuthenticatedClientesIndexRoute
-  '/costeo/': typeof AuthenticatedCosteoIndexRoute
-  '/inventario/': typeof AuthenticatedInventarioIndexRoute
-  '/recetas/': typeof AuthenticatedRecetasIndexRoute
   '/reservas/': typeof AuthenticatedReservasIndexRoute
   '/sesiones/': typeof AuthenticatedSesionesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -196,18 +212,20 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/configuracion': typeof AuthenticatedConfiguracionRoute
+  '/costeo': typeof AuthenticatedCosteoIndexRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/insumos': typeof AuthenticatedInsumosIndexRoute
+  '/inventario': typeof AuthenticatedInventarioIndexRoute
+  '/menus': typeof AuthenticatedMenusIndexRoute
   '/pagos': typeof AuthenticatedPagosRoute
   '/probar-correo': typeof AuthenticatedProbarCorreoRoute
   '/promociones': typeof AuthenticatedPromocionesRoute
+  '/recetas': typeof AuthenticatedRecetasIndexRoute
   '/reportes': typeof AuthenticatedReportesRoute
   '/usuarios': typeof AuthenticatedUsuariosRoute
   '/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/sesiones/$id': typeof AuthenticatedSesionesIdRoute
   '/clientes': typeof AuthenticatedClientesIndexRoute
-  '/costeo': typeof AuthenticatedCosteoIndexRoute
-  '/inventario': typeof AuthenticatedInventarioIndexRoute
-  '/recetas': typeof AuthenticatedRecetasIndexRoute
   '/reservas': typeof AuthenticatedReservasIndexRoute
   '/sesiones': typeof AuthenticatedSesionesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -223,18 +241,20 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/configuracion': typeof AuthenticatedConfiguracionRoute
+  '/_authenticated/costeo/': typeof AuthenticatedCosteoIndexRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/insumos/': typeof AuthenticatedInsumosIndexRoute
+  '/_authenticated/inventario/': typeof AuthenticatedInventarioIndexRoute
+  '/_authenticated/menus/': typeof AuthenticatedMenusIndexRoute
   '/_authenticated/pagos': typeof AuthenticatedPagosRoute
   '/_authenticated/probar-correo': typeof AuthenticatedProbarCorreoRoute
   '/_authenticated/promociones': typeof AuthenticatedPromocionesRoute
+  '/_authenticated/recetas/': typeof AuthenticatedRecetasIndexRoute
   '/_authenticated/reportes': typeof AuthenticatedReportesRoute
   '/_authenticated/usuarios': typeof AuthenticatedUsuariosRoute
   '/_authenticated/clientes/$id': typeof AuthenticatedClientesIdRoute
   '/_authenticated/sesiones/$id': typeof AuthenticatedSesionesIdRoute
   '/_authenticated/clientes/': typeof AuthenticatedClientesIndexRoute
-  '/_authenticated/costeo/': typeof AuthenticatedCosteoIndexRoute
-  '/_authenticated/inventario/': typeof AuthenticatedInventarioIndexRoute
-  '/_authenticated/recetas/': typeof AuthenticatedRecetasIndexRoute
   '/_authenticated/reservas/': typeof AuthenticatedReservasIndexRoute
   '/_authenticated/sesiones/': typeof AuthenticatedSesionesIndexRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -250,18 +270,20 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/calendario'
     | '/configuracion'
+    | '/costeo/'
     | '/dashboard'
+    | '/insumos/'
+    | '/inventario/'
+    | '/menus/'
     | '/pagos'
     | '/probar-correo'
     | '/promociones'
+    | '/recetas/'
     | '/reportes'
     | '/usuarios'
     | '/clientes/$id'
     | '/sesiones/$id'
     | '/clientes/'
-    | '/costeo/'
-    | '/inventario/'
-    | '/recetas/'
     | '/reservas/'
     | '/sesiones/'
     | '/lovable/email/auth/preview'
@@ -275,18 +297,20 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/calendario'
     | '/configuracion'
+    | '/costeo'
     | '/dashboard'
+    | '/insumos'
+    | '/inventario'
+    | '/menus'
     | '/pagos'
     | '/probar-correo'
     | '/promociones'
+    | '/recetas'
     | '/reportes'
     | '/usuarios'
     | '/clientes/$id'
     | '/sesiones/$id'
     | '/clientes'
-    | '/costeo'
-    | '/inventario'
-    | '/recetas'
     | '/reservas'
     | '/sesiones'
     | '/lovable/email/auth/preview'
@@ -301,18 +325,20 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/_authenticated/calendario'
     | '/_authenticated/configuracion'
+    | '/_authenticated/costeo/'
     | '/_authenticated/dashboard'
+    | '/_authenticated/insumos/'
+    | '/_authenticated/inventario/'
+    | '/_authenticated/menus/'
     | '/_authenticated/pagos'
     | '/_authenticated/probar-correo'
     | '/_authenticated/promociones'
+    | '/_authenticated/recetas/'
     | '/_authenticated/reportes'
     | '/_authenticated/usuarios'
     | '/_authenticated/clientes/$id'
     | '/_authenticated/sesiones/$id'
     | '/_authenticated/clientes/'
-    | '/_authenticated/costeo/'
-    | '/_authenticated/inventario/'
-    | '/_authenticated/recetas/'
     | '/_authenticated/reservas/'
     | '/_authenticated/sesiones/'
     | '/lovable/email/auth/preview'
@@ -388,11 +414,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConfiguracionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/costeo/': {
+      id: '/_authenticated/costeo/'
+      path: '/costeo'
+      fullPath: '/costeo/'
+      preLoaderRoute: typeof AuthenticatedCosteoIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/insumos/': {
+      id: '/_authenticated/insumos/'
+      path: '/insumos'
+      fullPath: '/insumos/'
+      preLoaderRoute: typeof AuthenticatedInsumosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventario/': {
+      id: '/_authenticated/inventario/'
+      path: '/inventario'
+      fullPath: '/inventario/'
+      preLoaderRoute: typeof AuthenticatedInventarioIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/menus/': {
+      id: '/_authenticated/menus/'
+      path: '/menus'
+      fullPath: '/menus/'
+      preLoaderRoute: typeof AuthenticatedMenusIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/pagos': {
@@ -414,6 +468,13 @@ declare module '@tanstack/react-router' {
       path: '/promociones'
       fullPath: '/promociones'
       preLoaderRoute: typeof AuthenticatedPromocionesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/recetas/': {
+      id: '/_authenticated/recetas/'
+      path: '/recetas'
+      fullPath: '/recetas/'
+      preLoaderRoute: typeof AuthenticatedRecetasIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reportes': {
@@ -442,27 +503,6 @@ declare module '@tanstack/react-router' {
       path: '/clientes/$id'
       fullPath: '/clientes/$id'
       preLoaderRoute: typeof AuthenticatedClientesIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/costeo/': {
-      id: '/_authenticated/costeo/'
-      path: '/costeo'
-      fullPath: '/costeo/'
-      preLoaderRoute: typeof AuthenticatedCosteoIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/inventario/': {
-      id: '/_authenticated/inventario/'
-      path: '/inventario'
-      fullPath: '/inventario/'
-      preLoaderRoute: typeof AuthenticatedInventarioIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/recetas/': {
-      id: '/_authenticated/recetas/'
-      path: '/recetas'
-      fullPath: '/recetas/'
-      preLoaderRoute: typeof AuthenticatedRecetasIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/reservas/': {
@@ -506,18 +546,20 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedConfiguracionRoute: typeof AuthenticatedConfiguracionRoute
+  AuthenticatedCosteoIndexRoute: typeof AuthenticatedCosteoIndexRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedInsumosIndexRoute: typeof AuthenticatedInsumosIndexRoute
+  AuthenticatedInventarioIndexRoute: typeof AuthenticatedInventarioIndexRoute
+  AuthenticatedMenusIndexRoute: typeof AuthenticatedMenusIndexRoute
   AuthenticatedPagosRoute: typeof AuthenticatedPagosRoute
   AuthenticatedProbarCorreoRoute: typeof AuthenticatedProbarCorreoRoute
   AuthenticatedPromocionesRoute: typeof AuthenticatedPromocionesRoute
+  AuthenticatedRecetasIndexRoute: typeof AuthenticatedRecetasIndexRoute
   AuthenticatedReportesRoute: typeof AuthenticatedReportesRoute
   AuthenticatedUsuariosRoute: typeof AuthenticatedUsuariosRoute
   AuthenticatedClientesIdRoute: typeof AuthenticatedClientesIdRoute
   AuthenticatedSesionesIdRoute: typeof AuthenticatedSesionesIdRoute
   AuthenticatedClientesIndexRoute: typeof AuthenticatedClientesIndexRoute
-  AuthenticatedCosteoIndexRoute: typeof AuthenticatedCosteoIndexRoute
-  AuthenticatedInventarioIndexRoute: typeof AuthenticatedInventarioIndexRoute
-  AuthenticatedRecetasIndexRoute: typeof AuthenticatedRecetasIndexRoute
   AuthenticatedReservasIndexRoute: typeof AuthenticatedReservasIndexRoute
   AuthenticatedSesionesIndexRoute: typeof AuthenticatedSesionesIndexRoute
 }
@@ -525,18 +567,20 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedConfiguracionRoute: AuthenticatedConfiguracionRoute,
+  AuthenticatedCosteoIndexRoute: AuthenticatedCosteoIndexRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedInsumosIndexRoute: AuthenticatedInsumosIndexRoute,
+  AuthenticatedInventarioIndexRoute: AuthenticatedInventarioIndexRoute,
+  AuthenticatedMenusIndexRoute: AuthenticatedMenusIndexRoute,
   AuthenticatedPagosRoute: AuthenticatedPagosRoute,
   AuthenticatedProbarCorreoRoute: AuthenticatedProbarCorreoRoute,
   AuthenticatedPromocionesRoute: AuthenticatedPromocionesRoute,
+  AuthenticatedRecetasIndexRoute: AuthenticatedRecetasIndexRoute,
   AuthenticatedReportesRoute: AuthenticatedReportesRoute,
   AuthenticatedUsuariosRoute: AuthenticatedUsuariosRoute,
   AuthenticatedClientesIdRoute: AuthenticatedClientesIdRoute,
   AuthenticatedSesionesIdRoute: AuthenticatedSesionesIdRoute,
   AuthenticatedClientesIndexRoute: AuthenticatedClientesIndexRoute,
-  AuthenticatedCosteoIndexRoute: AuthenticatedCosteoIndexRoute,
-  AuthenticatedInventarioIndexRoute: AuthenticatedInventarioIndexRoute,
-  AuthenticatedRecetasIndexRoute: AuthenticatedRecetasIndexRoute,
   AuthenticatedReservasIndexRoute: AuthenticatedReservasIndexRoute,
   AuthenticatedSesionesIndexRoute: AuthenticatedSesionesIndexRoute,
 }
