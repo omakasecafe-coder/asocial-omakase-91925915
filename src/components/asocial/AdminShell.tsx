@@ -66,9 +66,11 @@ const nav: NavEntry[] = [
     label: "Producción",
     icon: Package,
     children: [
+      { to: "/insumos", key: "insumos", label: "Insumos", icon: Package },
       { to: "/inventario", key: "inventario", label: "Inventario", icon: Package },
       { to: "/recetas", key: "recetas", label: "Recetas", icon: BookOpen },
-      { to: "/costeo", key: "costeo", label: "Costeo", icon: Calculator },
+      { to: "/menus", key: "menus", label: "Menús", icon: BookOpen },
+      { to: "/costeo", key: "costeo", label: "Costeo sesiones", icon: Calculator },
     ],
   },
   {
